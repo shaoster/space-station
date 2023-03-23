@@ -1,3 +1,6 @@
+import { CharacterId } from "./Characters";
+import { ItemId } from "./Items";
+
 /**
  * Countable core resources we'll need to keep track of.
  * 
@@ -25,9 +28,9 @@ export enum FungibleResource {
 export interface ResourceBundle {
   fungibles?: { [key in FungibleResource]?: number };
   items?: {
-    [key : string] : number
+    [key : ItemId] : number
   };
   relationships?: {
-    [key: string] : number
+    [key: CharacterId] : number
   };
 }

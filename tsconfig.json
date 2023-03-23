@@ -101,6 +101,6 @@
     "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
   },
   "typedocOptions": {
-    "entryPoints": ["src/game/Game.ts"]
+    "entryPoints": ["src/game/glossary/*.ts"]
   }
 }

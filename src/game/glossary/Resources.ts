@@ -1,3 +1,9 @@
+/**
+ * This is where we define top-level resources and mechanisms for talking about a collection of resources.
+ * 
+ * @packageDocumentation
+ */
+
 import { CharacterId } from "./Characters";
 import { ItemId } from "./Items";
 
@@ -16,8 +22,19 @@ import { ItemId } from "./Items";
  * These concepts are handled separately for now.
  */
 export enum FungibleResource {
+  /**
+   * How well-known you are.
+   * 
+   * Also, maybe how close the cops are to raiding you.
+   */
   Notoriety,
+  /**
+   * You use this to buy things.
+   */
   Money,
+  /**
+   * You may or may not need this to do things.
+   */
   Energy,
 }
 
@@ -26,10 +43,21 @@ export enum FungibleResource {
  * These can be used as requirements, costs, or rewards.
  */
 export interface ResourceBundle {
+  /**
+   * The core numeric resources that should show up in your HUD most of the time.
+   * 
+   * The "Type Declaration" documentation generated for this field is kind of hard to read, so just check out {@link FungibleResource}.
+   */
   fungibles?: { [key in FungibleResource]?: number };
+  /**
+   * The "inventory."
+   */
   items?: {
     [key : ItemId] : number
   };
+  /**
+   * Your closeness with various characters.
+   */
   relationships?: {
     [key: CharacterId] : number
   };

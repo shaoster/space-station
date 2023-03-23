@@ -1,48 +1,35 @@
 /**
- * This file doesn't introduce any new concepts but compiles the other concepts described in this directory in
- * a hopefully easier-to-understand manner.
- */
+ * There's a lot of stuff here that isn't particularly helpful for public documentation.
+ * 
+ * The one thing you want to actually look at is {@link GameConfiguration} to see the top-level data model
+ * for how we define all the content for the game.
+ * 
+ * @packageDocumentation
+ **/
 
-import { Character, CharacterId, CharacterLibrary, CharacterRole } from "./Characters";
-import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary } from "./Conversation"
+import { Character, CharacterId, CharacterLibrary} from "./Characters";
+import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary } from "./Conversations"
 import { Item, ItemId, ItemLibrary } from "./Items";
 import { Image, ImageId, ImageLibrary } from "./Images";
 import { Location, LocationId, LocationLibrary } from "./Locations";
 import { EventSchedule } from "./Events";
-import { FungibleResource, ResourceBundle } from "./Resources";
-import { monitorEventLoopDelay } from "perf_hooks";
+import { ResourceBundle } from "./Resources";
 
+/** @private */
 export type IdentifiableEntity = Character | Conversation | DialogueEntry | Image | Item | Location;
 
+/** @private */
 export type EntityId = CharacterId | ConversationId | DialogueEntryId | ImageId | ItemId | LocationId;
 
+/** @private */
 export type EntityLibrary = CharacterLibrary | ConversationLibrary | DialogueEntryLibrary | ImageLibrary | ItemLibrary | LocationLibrary;
 
-// Everything you need to specify for the computer to know how to make the game.
-export interface GameConfiguration {
-  // All the characters.
-  characterLibrary: CharacterLibrary;
-  // All the de-copy-fied dialogue trees.
-  conversationLibrary: ConversationLibrary;
-  // All the copy.
-  dialogueEntryLibrary: DialogueEntryLibrary;
-  // All the images.
-  imageLibrary: ImageLibrary;
-  // All the items.
-  itemLibrary: ItemLibrary;
-  // All the locations.
-  locationLibrary: LocationLibrary;
-  // The initial event schedule.
-  // I guess choices you make might impact your actual event schedule, but TBD.
-  initialEventSchedule: EventSchedule;
-  // What you start with.
-  initialResources: ResourceBundle;
-}
-
 /**
- * Just an example to show how it all comes together.
- */
-export const EXAMPLE_DUMMY_GAME_CONFIGURATION : GameConfiguration = {
+ * 
+ * Everything you need to specify for the computer to know how to make the game.
+ * 
+ * @example
+ * {
   characterLibrary: {
     jane: {
       name: "Jane Doe",
@@ -163,4 +150,31 @@ export const EXAMPLE_DUMMY_GAME_CONFIGURATION : GameConfiguration = {
       jane: 0,
     }
   }
+}
+*/
+export interface GameConfiguration {
+  /** All the characters, indexed by a shorthand id (i.e. "jane"). */
+  characterLibrary: CharacterLibrary;
+  /** All the conversations, indexed by a shorthand id (i.e. "first-taste-of-blood"). */
+  conversationLibrary: ConversationLibrary;
+  /** All the dialogue copy, indexed by a shorthand id (i.e. "jane/greeting"). */
+  dialogueEntryLibrary: DialogueEntryLibrary;
+  /** All the images, indexed by a shorthand id (i.e. "jane/portrait"). */
+  imageLibrary: ImageLibrary;
+  /** All the items, indexed by a shorthand id (i.e. "drugs/awesome-sauce") */
+  itemLibrary: ItemLibrary;
+  /** All the locations, indexed by a shorthand id (i.e. "loading-docks") */
+  locationLibrary: LocationLibrary;
+  
+  /**
+   * The initial event schedule.
+   * 
+   * I guess choices you make might impact your actual event schedule, but TBD.
+   **/
+  initialEventSchedule: EventSchedule;
+
+  /**
+   * The set of resources you start the game with.
+   **/
+  initialResources: ResourceBundle;
 }

@@ -19,4 +19,4 @@ There's no technical reason why we can't have a bar called "The Jane" that's als
 
 Human confusion, however, is a good enough reason to avoid ambiguous names where possible.
 
-To see how this all comes together, check out [Compendium.ts].
+To see how this all comes together, check out the [Compendium](Compendium.ts).

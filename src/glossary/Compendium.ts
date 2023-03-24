@@ -14,6 +14,7 @@ import { Image, ImageId, ImageLibrary } from "./Images";
 import { Location, LocationId, LocationLibrary } from "./Locations";
 import { EventSchedule } from "./Events";
 import { ResourceBundle } from "./Resources";
+import { TupleType } from "typescript";
 
 /** @private */
 export type IdentifiableEntity = Character | Conversation | DialogueEntry | Image | Item | Location;
@@ -177,4 +178,24 @@ export interface GameConfiguration {
    * The set of resources you start the game with.
    **/
   initialResources: ResourceBundle;
+}
+
+/**
+ * @hidden
+ */
+const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
+  characterLibrary: {},
+  conversationLibrary: {},
+  dialogueEntryLibrary: {},
+  imageLibrary: {},
+  itemLibrary: {},
+  locationLibrary: {},
+  initialEventSchedule: {},
+  initialResources: {},
+}
+
+export function newGameConfiguration() : GameConfiguration {
+  return {
+    ...EMPTY_GAME_CONFIGURATION
+  };
 }

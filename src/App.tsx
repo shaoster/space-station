@@ -1,13 +1,10 @@
 import './App.css';
 import React from 'react';
+import Studio from './editor/Studio';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        foo
-      </header>
-    </div>
+    <Studio/>
   );
 }
 

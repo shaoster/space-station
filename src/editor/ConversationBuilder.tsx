@@ -130,8 +130,8 @@ const DialogueNodeArranger = ({value, label} : {value : DialogueNode, label?: st
     },
     type: "smoothstep"
   }));
-  const [nodes, setCurrentNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  const [nodes, _setCurrentNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, _setEdges, onEdgesChange] = useEdgesState(initialEdges);
   return <div style={{
     width: "100%", height: "800px",
     overflow: "hidden", position: "relative",

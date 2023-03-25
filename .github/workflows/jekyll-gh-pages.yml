@@ -31,9 +31,9 @@ jobs:
       - name: Ensure Dependencies
         run: |
           npm install
-      - name: Build App
+      - name: Clean Up
         run: |
-          npm run build
+          rm -rf ./build
       - name: Build Docs
         run: |
           npx typedoc

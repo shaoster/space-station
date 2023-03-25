@@ -50,5 +50,6 @@
   },
   "devDependencies": {
     "typedoc": "^0.23.28"
-  }
+  },
+  "homepage": "https://shaoster.github.io/space-station"
 }

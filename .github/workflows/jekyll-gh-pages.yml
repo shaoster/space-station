@@ -28,9 +28,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Build Docs
+      - name: Ensure Dependencies
         run: |
           npm install
+      - name: Build App
+        run: |
+          npm run build
+      - name: Build Docs
+        run: |
           npx typedoc
       - name: Setup Pages
         uses: actions/configure-pages@v3

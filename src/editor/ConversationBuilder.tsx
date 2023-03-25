@@ -130,7 +130,9 @@ const DialogueNodeArranger = ({value, label} : {value : DialogueNode, label?: st
     },
     type: "smoothstep"
   }));
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [nodes, _setCurrentNodes, onNodesChange] = useNodesState(initialNodes);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [edges, _setEdges, onEdgesChange] = useEdgesState(initialEdges);
   return <div style={{
     width: "100%", height: "800px",

@@ -52,9 +52,9 @@ export const SaveProfileProvider = ({children} : {children: ReactNode}) => {
   const rebasedChildren = <ProfileNameProvider>
     {children}
   </ProfileNameProvider>;
-  return <HashRouter>
+  return <HashRouter basename="/">
     <Routes>
-      <Route path="profiles/:profileName" element={rebasedChildren}/>
+      <Route path="/profiles/:profileName" element={rebasedChildren}/>
     </Routes>
   </HashRouter>;
 };

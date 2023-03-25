@@ -7,14 +7,13 @@
  * @packageDocumentation
  **/
 
-import { Character, CharacterId, CharacterLibrary} from "./Characters";
-import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary } from "./Conversations"
-import { Item, ItemId, ItemLibrary } from "./Items";
-import { Image, ImageId, ImageLibrary } from "./Images";
-import { Location, LocationId, LocationLibrary } from "./Locations";
+import { Character, CharacterId, CharacterLibrary, CharacterRole } from "./Characters";
+import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary } from "./Conversations";
 import { EventSchedule } from "./Events";
+import { Image, ImageId, ImageLibrary } from "./Images";
+import { Item, ItemId, ItemLibrary } from "./Items";
+import { Location, LocationId, LocationLibrary } from "./Locations";
 import { ResourceBundle } from "./Resources";
-import { TupleType } from "typescript";
 
 /** @private */
 export type IdentifiableEntity = Character | Conversation | DialogueEntry | Image | Item | Location;
@@ -41,18 +40,18 @@ export type EntityLibrary = CharacterLibrary | ConversationLibrary | DialogueEnt
   },
   conversationLibrary: {
     welcome: {
-      location: "jane/home",
-      charactersPresent: [
+      locationId: "jane/home",
+      characterIds: [
         "jane"
       ],
       // This tree most certainly would have to be constructed with a drag-drop UI.
       initialDialogueNode: {
-        dialogEntryId: "jane/hello",
+        dialogueEntryId: "jane/hello",
         next: {
           // As a convention, let's just use the choice key of "_" to indicate we intend
           // not to give the player any choice.
           _: {
-            dialogEntryId: "gameover/bad",
+            dialogueEntryId: "gameover/bad",
             isGameOver: true,
           }
         },
@@ -184,12 +183,52 @@ export interface GameConfiguration {
  * @hidden
  */
 const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
-  characterLibrary: {},
+  characterLibrary: {
+    jane: {
+      name: "Jane Doe",
+      title: "The Proctor",
+      role: CharacterRole.MainCharacter,
+      imageId: "jane/portrait"
+    },
+    baz: {
+      name: "Baz Buzz",
+      title: "Boozelfop",
+      role: CharacterRole.Colleague,
+      imageId: "jane/portrait"
+    }
+  },
   conversationLibrary: {},
-  dialogueEntryLibrary: {},
-  imageLibrary: {},
+  dialogueEntryLibrary: {
+    hello: {
+      textMarkdown: "Hi!",
+    },
+    goodbye: {
+      textMarkdown: "Bye!",
+    }
+  },
+  imageLibrary: {
+    "jane/portrait": {
+      alt: "Your face.",
+      url: "404.png",
+    },
+    "jane/home": {
+      alt: "Your flat.",
+      url: "404.png",
+    }
+  },
   itemLibrary: {},
-  locationLibrary: {},
+  locationLibrary: {
+    home: {
+      name: "Your Apartment",
+      description: "It's pretty dusty, I guess.",
+      imageId: "jane/home"
+    },
+    bar: {
+      name: "The Bar",
+      description: "This is just your house?",
+      imageId: "jane/home"
+    }
+  },
   initialEventSchedule: {},
   initialResources: {},
 }

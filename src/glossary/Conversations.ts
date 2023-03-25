@@ -57,7 +57,7 @@ export interface DialogueNode {
    * 
    * This is an identifier to a {@link DialogueEntry} in the {@link DialogueEntryLibrary}.
    */
-  dialogEntryId: DialogueEntryId;
+  dialogueEntryId: DialogueEntryId;
 
   /**
    * Maybe this character is calling on the phone and we want a cut-in when they talk.
@@ -66,7 +66,7 @@ export interface DialogueNode {
    * situations where we want to resort to a different UI when we're shoehorning a
    * dialogue tree to model a shopping spree.
    **/
-  locationIdOverride?: string;
+  locationId?: string;
   
   /**
    * This is where we set up the dialogue tree.
@@ -80,7 +80,7 @@ export interface DialogueNode {
    * For now, we have no way of distinguishing between hidden and visible unmet requirements, but
    * this is where we would add it in the future. 
    **/
-  next?: { [key: string] : DialogueNode };
+  next: { [key: string] : DialogueNode };
 
   // requirement, cost, and reward are the same type of thing, but mean different things.
   // We might have a requirement for unlocking this conversation node, but not incur that cost for doing so.
@@ -110,12 +110,12 @@ export interface Conversation {
    * Where are you when this conversation is happening?
    * The {@link Locations.LocationId} is a reference into the {@link Locations.LocationLibrary}.
    */
-  location: LocationId;
+  locationId: LocationId;
   /**
    * It might be useful for UI reasons to show which characters are present in the
    * conversation at the outset.
    */
-  charactersPresent: CharacterId[];
+  characterIds: CharacterId[];
   /**
    * The entry point into how we set up the dialogue tree for this interaction.
    */

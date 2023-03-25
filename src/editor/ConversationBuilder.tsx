@@ -1,5 +1,5 @@
-import { Card, CardContent, Divider, MenuItem, Paper, Select, TextField, Tooltip } from "@mui/material";
-import { Controls, MarkerType, ReactFlow, useEdgesState, useNodesState } from "reactflow";
+import { Card, CardContent, Divider, MenuItem, Select, TextField, Tooltip } from "@mui/material";
+import { MarkerType, ReactFlow, useEdgesState, useNodesState } from "reactflow";
 import { GameConfiguration } from "../glossary/Compendium";
 import { Conversation, ConversationId, ConversationLibrary, DialogueEntryId, DialogueNode } from "../glossary/Conversations";
 import { EditableField, EntityHandler, LibraryEditorBuilder } from "./LibraryEditor";

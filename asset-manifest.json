@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/space-station/static/css/main.11385901.css",
+    "main.js": "/space-station/static/js/main.7a6cff75.js",
+    "index.html": "/space-station/index.html",
+    "main.11385901.css.map": "/space-station/static/css/main.11385901.css.map",
+    "main.7a6cff75.js.map": "/space-station/static/js/main.7a6cff75.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.11385901.css",
+    "static/js/main.7a6cff75.js"
+  ]
+}

@@ -5,7 +5,7 @@ import { ResourceBundle } from "../glossary/Resources";
 import { useGameConfiguration } from "./Profiles";
 
 export type LibraryField = keyof GameConfiguration;
-export interface LibraryHandler<T extends EntityLibrary> {
+export interface LibraryHandler<T extends EntityLibrary, U extends EntityId> {
   /**
    * Pick which library you are taking ownership for.
    * This is generally hierarchical, so any changes to the sub-library have to be validated by the parent before
@@ -28,6 +28,26 @@ export interface LibraryHandler<T extends EntityLibrary> {
     configuration: GameConfiguration,
     libraryUpdater: (library: T) => void,
   ) => JSX.Element;
+
+  /**
+   * This gives us a way to provide an encapsulated mechanism for each editor to ensure
+   * the referential integrity of objects that it is responsible for managing.
+   * 
+   * By "encapsulated" here, I mean that only the thing that needs another object should be required
+   * to know about that dependency, instead of everybody else having to account for the dependency.
+   * 
+   * Before any candidate library is accepted into the top-level, all other registered editors must be
+   * queried to see if any data dependencies are now violated.
+   * 
+   * @param configuration The current draft configuration to validate.
+   * @param library The library containing the entities to validate, chosen based on {@link LibraryHandler.libraryFieldSelector}.
+   * @returns A potentially empty list of entity ids (of the type this editor is managing) whose dependencies
+   * are violated. An empty list means all is well.
+   */
+  validateDataDependencies(
+    configuration: GameConfiguration,
+    library: T
+  ) : U[];
 };
 
 export interface EntityHandler<T extends EntityId, U extends IdentifiableEntity, V extends EntityLibrary> {
@@ -59,6 +79,26 @@ export interface EntityHandler<T extends EntityId, U extends IdentifiableEntity,
     entityId?: T,
     entityValue?: U
   ) => JSX.Element;
+
+  /**
+   * This gives us a way to provide an encapsulated mechanism for each editor to ensure
+   * the referential integrity of objects that it is responsible for managing.
+   * 
+   * Before any candidate library is accepted into the top-level, all other registered editors must be
+   * queried to see if any data dependencies are now violated.
+   * 
+   * This is a convenient way to do per-entity validation in the cases where that's appropriate.
+   * 
+   * @param configuration The current draft configuration to validate.
+   * @param entityId The current entity id to validate. (Maybe not useful in most cases, but hard to access otherwise.)
+   * @param entity The current entity to validate.
+   * @returns `true` if dependencies are met. `false` if something broke.
+   */
+  validateDataDependencies(
+    configuration: GameConfiguration,
+    entityId: T,
+    entity: U
+  ) : boolean;
 };
 
 type LibraryUpdateAction = {
@@ -66,6 +106,7 @@ type LibraryUpdateAction = {
   libraryData: EntityLibrary
 };
 
+// Lots of editors wil need the ResourcePicker component, so put the logic here?
 function validateResourceBundle(
   configuration: GameConfiguration,
   bundle: ResourceBundle
@@ -85,43 +126,6 @@ function validateResourceBundle(
   return true;
 }
 
-/**
- * Really poorly implemented referential integrity checker. 
- * TODO: Fix the obvious bugs with the references.
- * @param configuration
- * @param libraryField 
- * @returns 
- */
-function libraryMaintainsReferentialIntegrity(
-  configuration: GameConfiguration,
-  libraryField: LibraryField
-) {
-  // Basically, we just need to check all other fields in the configuration that make reference to this library.
-  const candidateLibrary = configuration[libraryField];
-
-  // This is kind of bogus, but convention > configuration.
-  const idLabel : EntityId = libraryField.replace("Library$", "Id");
-
-  for (const libraryToCheck in configuration) {
-    if (libraryToCheck === libraryField) {
-      // In theory we could have self-references, but I've disallowed that.
-      continue;
-    }
-    if (libraryToCheck === "initialResources") {
-      // We have to check referential integrity on resource bundles separately.
-      continue;
-    }
-
-    const referencingLibrary = configuration[libraryToCheck as LibraryField];
-    Object.values(referencingLibrary).every((entity: IdentifiableEntity) => 
-      idLabel in entity && entity[idLabel as keyof typeof entity] in candidateLibrary
-    );
-  }
-  // Using this helper might do a tiny bit extra work if we're not touching the
-  // character or item libraries, but whatever.
-  return validateResourceBundle(configuration, configuration.initialResources);
-}
-
 enum UpdateStatus {
   Initial,
   Rejected,
@@ -137,9 +141,8 @@ function libraryUpdateReducer(
   state: GameConfigurationUpdateState, 
   action: LibraryUpdateAction
 ) : GameConfigurationUpdateState {
-  // We can enforce referential integrity or cascading deletes here.
-  if (!libraryMaintainsReferentialIntegrity(state.config, action.libraryField)) {
-    // Do not modify. 
+  if (false) {
+    // TODO: Set up the validation machinery.
     return {
       config: state.config,
       lastUpdateStatus: UpdateStatus.Rejected
@@ -233,8 +236,8 @@ export class LibraryEditorBuilder {
    * to validate/reject updates from the individual library handlers that violate referential
    * integrity.
    */
-  public static fromLibraryHandler<T extends EntityLibrary>(
-    libraryHandler : LibraryHandler<T>
+  public static fromLibraryHandler<T extends EntityLibrary, U extends EntityId>(
+    libraryHandler : LibraryHandler<T, U>
   ) { 
     return () => {
       const {
@@ -273,7 +276,7 @@ export class LibraryEditorBuilder {
     T extends EntityId, U extends IdentifiableEntity, V extends EntityLibrary
   > (entityHandler : EntityHandler<T, U, V>) { 
     const genericPreservingEntries = (library: V) => Object.entries(library) as [T, U][]
-    const defaultLibraryHandler : LibraryHandler<V> = {
+    const defaultLibraryHandler : LibraryHandler<V, T> = {
       libraryFieldSelector: entityHandler.libraryFieldSelector,
       renderLibrary: (config, libraryUpdater) => (
         <List>
@@ -306,7 +309,14 @@ export class LibraryEditorBuilder {
             </ListItem>
           }
         </List>
-      )
+      ),
+      validateDataDependencies: (configuration, library) => {
+        const entries = Object.entries(library) as [T, U][];
+        return entries.filter(
+          ([entityId, entity]) =>
+          !entityHandler.validateDataDependencies(configuration, entityId as T, entity as U)
+        ).map(([k, v]) => k);
+      }
     };
     return this.fromLibraryHandler(defaultLibraryHandler);
   }

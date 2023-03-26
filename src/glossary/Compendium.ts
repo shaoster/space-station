@@ -7,22 +7,29 @@
  * @packageDocumentation
  **/
 
-import { Character, CharacterId, CharacterLibrary, CharacterRole } from "./Characters";
-import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary } from "./Conversations";
+import { Character, CharacterId, CharacterLibrary, CharacterMood, CharacterRole } from "./Characters";
+import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "./Conversations";
 import { EventSchedule } from "./Events";
 import { Image, ImageId, ImageLibrary } from "./Images";
 import { Item, ItemId, ItemLibrary } from "./Items";
 import { Location, LocationId, LocationLibrary } from "./Locations";
+import { RaceLibrary } from "./Races";
 import { ResourceBundle } from "./Resources";
 
-/** @private */
-export type IdentifiableEntity = Character | Conversation | DialogueEntry | Image | Item | Location;
+// Grouping these types this way is a bit heavy-handed, but I'm doing it here to prevent typos where
+// everything can be laid out in parallel and visually obvious as a result.
+//
+// It'll be much harder to remember whether I'm dealing with Foo, FooId or FooLibrary when they're
+// bumping up against each other in actual code.
 
 /** @private */
-export type EntityId = CharacterId | ConversationId | DialogueEntryId | ImageId | ItemId | LocationId;
+export type IdentifiableEntity = Character | Conversation | DialogueNode | DialogueEntry | Image | Item | Location;
 
 /** @private */
-export type EntityLibrary = CharacterLibrary | ConversationLibrary | DialogueEntryLibrary | ImageLibrary | ItemLibrary | LocationLibrary;
+export type EntityId = CharacterId | ConversationId | DialogueNodeId | DialogueEntryId | ImageId | ItemId | LocationId;
+
+/** @private */
+export type EntityLibrary = CharacterLibrary | ConversationLibrary | DialogueNodeLibrary | DialogueEntryLibrary | ImageLibrary | ItemLibrary | LocationLibrary;
 
 /**
  * 
@@ -165,6 +172,8 @@ export interface GameConfiguration {
   itemLibrary: ItemLibrary;
   /** All the locations, indexed by a shorthand id (i.e. "loading-docks") */
   locationLibrary: LocationLibrary;
+  /** All the races, indexed by a shorthand id (i.e. "human") */
+  raceLibrary: RaceLibrary;
   
   /**
    * The initial event schedule.
@@ -188,13 +197,25 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
       name: "Jane Doe",
       title: "The Proctor",
       role: CharacterRole.MainCharacter,
-      imageId: "jane/portrait"
+      imageIds: {
+        [CharacterMood.Neutral]: "jane/portrait" 
+      },
+      raceId: "human"
     },
     baz: {
       name: "Baz Buzz",
       title: "Boozelfop",
       role: CharacterRole.Colleague,
-      imageId: "jane/portrait"
+      imageIds: {
+        [CharacterMood.Neutral]: "jane/portrait" 
+      },
+      raceId: "human"
+    }
+  },
+  raceLibrary: {
+    human: {
+      raceName: "The Coalition of Human Races",
+      imageId: "jane/portrait" // You are the avatar of humanity!
     }
   },
   conversationLibrary: {},

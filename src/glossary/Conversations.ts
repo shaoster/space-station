@@ -80,7 +80,7 @@ export interface DialogueNode {
    * For now, we have no way of distinguishing between hidden and visible unmet requirements, but
    * this is where we would add it in the future. 
    **/
-  next: { [key: string] : DialogueNode };
+  next: { [key: string] : DialogueNodeId };
 
   // requirement, cost, and reward are the same type of thing, but mean different things.
   // We might have a requirement for unlocking this conversation node, but not incur that cost for doing so.
@@ -98,6 +98,8 @@ export interface DialogueNode {
   isGameOver?: boolean;
 }
 
+export type DialogueNodeId = string;
+export type DialogueNodeLibrary = { [key: DialogueNodeId]: DialogueNode };
 /**
  * A conversation represents an top-level interaction with one or more characters.
  * 
@@ -119,7 +121,16 @@ export interface Conversation {
   /**
    * The entry point into how we set up the dialogue tree for this interaction.
    */
-  initialDialogueNode: DialogueNode;
+  initialDialogueNodeId: DialogueNodeId;
+
+  /**
+   * Scoped dialogue node library for this conversation.
+   * "Scoped" here means that an id of "foo" can be reused for different dialogue nodes
+   * in different conversations without colliding.
+   */
+  dialogueNodeLibrary: {
+    [key : DialogueNodeId] : DialogueNode
+  }
 }
 
 export type ConversationId = string;

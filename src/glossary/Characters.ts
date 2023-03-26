@@ -4,6 +4,15 @@
  * @packageDocumentation
  */
 
+import { ImageId } from "./Images";
+import { RaceId } from "./Races";
+
+export enum CharacterMood {
+  Neutral = 0,
+  Happy,
+  Upset,
+};
+
 /**
  * Every character should belong to one and exactly one of these roles.
  * 
@@ -51,20 +60,27 @@ export interface Character {
    * Thus, this is separate from the character's full name.
    **/
   title: string;
+
   /**
-   * @TODO: No factions yet.
+   * Race of the character.
+   * From the gameplay perspective, this is primarily useful for managing drug interactions.
    * 
    * Note that this is distinct from {@link role}.
+   * 
    */
-  faction?: never; // No factions yet.
+  raceId: RaceId;
+
   /**
    * How do you interact with this character?
    */
   role: CharacterRole;
+  
   /**
-   * Just a reference to an image in the {@link Images.ImageLibrary}.
+   * to an image in the {@link Images.ImageLibrary}.
    */
-  imageId: string;
+  imageIds: {
+    [key in CharacterMood]?: ImageId
+  };
 
 }
 

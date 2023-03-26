@@ -1,7 +1,7 @@
-import { Card, CardContent, Divider, MenuItem, Select, TextField, Tooltip } from "@mui/material";
+import { Card, CardContent, Chip, Divider, MenuItem, Select, TextField, Tooltip } from "@mui/material";
 import { MarkerType, ReactFlow, useEdgesState, useNodesState } from "reactflow";
 import { GameConfiguration } from "../glossary/Compendium";
-import { Conversation, ConversationId, ConversationLibrary, DialogueEntryId, DialogueNode } from "../glossary/Conversations";
+import { Conversation, ConversationId, ConversationLibrary, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
 import { EditableField, EntityHandler, LibraryEditorBuilder } from "./LibraryEditor";
 import { useGameConfiguration } from "./Profiles";
 import 'reactflow/dist/style.css';
@@ -32,14 +32,18 @@ export const ConversationSelector = (
 // A test example for now.
 const EMPTY_CONVERSATION : Conversation = {
   characterIds: ["jane", "baz"],
-  initialDialogueNode: {
-    dialogueEntryId: "hello",
-    next: {
-      _: {
-        dialogueEntryId: "goodbye",
-        isGameOver: true,
-        next: {}
+  initialDialogueNodeId: "0",
+  dialogueNodeLibrary: {
+    "0": {
+      dialogueEntryId: "hello",
+      next: {
+        _: "1"
       }
+    },
+    "1": {
+      dialogueEntryId: "goodbye",
+      isGameOver: true,
+      next: {}
     }
   },
   locationId: "bar"
@@ -50,50 +54,37 @@ const newConversation : () => Conversation = () => ({
 });
 
 type DialogueNodeVisualizer = {
+  id: DialogueNodeId,
   dialogueEntryId: DialogueEntryId,
   isGameOver: boolean,
 };
 
 type NextDialogueEdge = {
-  parentIndex: number,
-  childIndex: number,
+  parentId: string,
+  childId: string,
+  label: string,
 };
 
-type DialogueTreeSummary = {
+type DialogueLibrarySummary = {
   nodeVisualizers: DialogueNodeVisualizer[],
   dialogueEdges: NextDialogueEdge[],
 }
 
-function visualizeNode(node: DialogueNode) : DialogueNodeVisualizer {
+function visualizeNode(id: DialogueNodeId, node: DialogueNode) : DialogueNodeVisualizer {
   return {
+    id: id,
     dialogueEntryId: node.dialogueEntryId,
     isGameOver: node.isGameOver ?? false
   }
 }
 
-function summarizeTree(node: DialogueNode) : DialogueTreeSummary {
-  // First do a breadth-first traversal.
-  // If we end up doing 1000s of nodes of dialogues in a given tree, we probably need to use something
-  // better than an array, but w/e.
-  let queue = [node];
-  let outVisualizers = [];
+function summarizeDialogueLibrary(nodeLibrary: DialogueNodeLibrary) : DialogueLibrarySummary {
+  const nodes = (Object.entries(nodeLibrary) as [DialogueNodeId, DialogueNode][]);
+  let outVisualizers = nodes.map(([id, node]) => visualizeNode(id, node));
   let outEdges: NextDialogueEdge[] = [];
-  let indexer = 0;
-  while (queue.length > 0) {
-    // Bogus typecast, but it's protected at runtime with the queue length check above.
-    let nextNode : DialogueNode = queue.shift() as DialogueNode;
-    // We don't really have to worry about cycle detection, because a DialogueNode is an
-    // explicit tree. It's only in the reverse direction that we have to be careful.
-    outVisualizers.push(visualizeNode(nextNode));
-    let parentIndex = indexer;
-    for (const childNode of Object.values(nextNode.next)) {
-      queue.push(childNode);
-      outEdges.push(
-        {
-          parentIndex,
-          childIndex: ++indexer
-        }
-      )
+  for (const [parentId, node] of nodes) {
+    for (const [label, childId] of Object.entries(node.next)) {
+      outEdges.push({parentId, childId, label});
     }
   }
   return {
@@ -102,28 +93,30 @@ function summarizeTree(node: DialogueNode) : DialogueTreeSummary {
   };
 }
 
-const DialogueNodeArranger = ({value, label} : {value : DialogueNode, label?: string}) => {
+const DialogueNodeArranger = ({conversation} : {conversation : Conversation}) => {
   const {
     nodeVisualizers,
     dialogueEdges
-  } = summarizeTree(value);
+  } = summarizeDialogueLibrary(conversation.dialogueNodeLibrary);
   const initialNodes = nodeVisualizers.map((viser, index) => ({
-    id: "" + index,
+    id: viser.id,
     data: {
-      label: index === 0 ? "ROOT: " + viser.dialogueEntryId : viser.dialogueEntryId,
+      label: viser.id === conversation.initialDialogueNodeId ? 
+        "ROOT: " + viser.dialogueEntryId : viser.dialogueEntryId,
     },
     style: {
       border: '1px solid #444', padding: 10, background: viser.isGameOver ? "#ff5f5f" : "#efefef",
       borderRadius: "4px"
     },
-    // Find some positioning protocol.
+    // Find some better positioning protocol, or maybe store the positions. IDK.
     position: { x: 150, y: 50 + (100 * index) }
   }));
   const initialEdges = dialogueEdges.map((edge, index) => ({
-    id: "" + index,
-    source: "" + edge.parentIndex,
-    target: "" + edge.childIndex,
+    id: index + "", // This index probably doesn't matter much(???), so just auto-gen it.
+    source: edge.parentId,
+    target: edge.childId,
     animated: true,
+    label: edge.label === "_" ? "<FORCED>" : edge.label,
     style: { stroke: '#fff' },
     markerEnd: {
       type: MarkerType.Arrow
@@ -163,11 +156,14 @@ const ConversationCard = ({ id, maybeConversation, ...props } : { id: Conversati
   return (
     <Card sx={{width: "100%"}}>
       <CardContent>
-        <TextField value={id} label="Identifier" margin="normal"/>
+        <TextField defaultValue={id} label="Identifier" margin="normal"/>
         <Divider/>
         <EditableField fieldLabel={"locationId"} fieldValue={conversation.locationId}/>
         <EditableField fieldLabel={"characterIds"} fieldValue={conversation.characterIds}/>
-        <DialogueNodeArranger value={conversation.initialDialogueNode} label="Dialogue Tree"/>
+        <Divider>
+          <Chip label="Dialogue Arranger" />
+        </Divider>
+        <DialogueNodeArranger conversation={conversation}/>
       </CardContent>
     </Card>
   );
@@ -187,6 +183,21 @@ const renderConversation = (
 const conversationHandler : EntityHandler<ConversationId, Conversation, ConversationLibrary> = {
   libraryFieldSelector: "conversationLibrary",
   renderEntity: renderConversation,
+  validateDataDependencies: (configuration, _, entity) => {
+    for (const characterId of entity.characterIds) {
+      if (!(characterId in configuration.characterLibrary)) {
+        return false;
+      }
+    }
+    for (const dialogueNode of Object.values(entity.dialogueNodeLibrary)) {
+      for (const nextDialogueId of Object.values(dialogueNode.next)) {
+        if (!(nextDialogueId in entity.dialogueNodeLibrary)) {
+          return false;
+        }
+      }
+    }
+    return entity.initialDialogueNodeId in entity.dialogueNodeLibrary;
+  },
 };
 
 export default function ConversationBuilder() {

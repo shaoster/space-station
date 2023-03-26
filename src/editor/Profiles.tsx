@@ -30,6 +30,9 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
   useEffect(() => {
     saveCurrentConfiguration(workingConfiguration);  
   }, [workingConfiguration, saveCurrentConfiguration]);
+  // Generate a run-time dependency graph so we know which 
+
+
   return <GameConfigurationContext.Provider value={{
     gameConfiguration: workingConfiguration,
     updateGameConfiguration: updateWorkingConfiguration

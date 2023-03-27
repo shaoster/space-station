@@ -2,7 +2,7 @@ import { Autocomplete, List, ListItem, TextField, TextFieldProps } from "@mui/ma
 import { SyntheticEvent, useReducer } from "react";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
-import { useGameConfiguration } from "./Profiles";
+import { useGameConfiguration } from "./Util";
 
 export type LibraryField = keyof GameConfiguration;
 export interface LibraryHandler<T extends EntityLibrary, U extends EntityId> {

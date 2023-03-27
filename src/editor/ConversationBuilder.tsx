@@ -3,7 +3,7 @@ import { MarkerType, ReactFlow, ReactFlowProvider, useEdgesState, useNodesState,
 import { GameConfiguration } from "../glossary/Compendium";
 import { Conversation, ConversationId, ConversationLibrary, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
 import { LibrarySelector, EntityHandler, LibraryEditorBuilder } from "./LibraryEditor";
-import { useGameConfiguration } from "./Profiles";
+import { useGameConfiguration } from "./Util";
 import 'reactflow/dist/style.css';
 import { useState } from "react";
 

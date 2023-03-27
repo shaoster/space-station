@@ -1,7 +1,7 @@
 import { Box, Tab, Tabs } from "@mui/material";
 import { ReactNode, useState } from "react";
 import ConversationBuilder from "./ConversationBuilder";
-import { SaveProfileProvider } from "./Profiles";
+import { DataManager, DataNode, SaveProfileProvider, useDataManager, useGameConfiguration } from "./Util";
 
 function TabPanel(
   {activeTab, tabId, children, ...props}
@@ -21,14 +21,21 @@ export default function Studio() {
   const handleChange = (_: any, newTabIndex: number) => {
     setActiveTab(newTabIndex);
   };
-  return <SaveProfileProvider>
+  const {
+    gameConfiguration
+  } = useGameConfiguration();
+  return <>
     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Tabs value={activeTab} onChange={handleChange} aria-label="basic tabs example">
-        <Tab label="Conversation Builder" />
-      </Tabs>
+        <Tabs value={activeTab} onChange={handleChange} aria-label="basic tabs example">
+          <Tab label="Conversation Builder" />
+        </Tabs>
     </Box>
-    <TabPanel activeTab={activeTab} tabId={0}>
-      <ConversationBuilder/>
-    </TabPanel>
-  </SaveProfileProvider>;
+    <DataManager data={gameConfiguration}>
+      <DataNode dataKey="conversationLibrary">
+        <TabPanel activeTab={activeTab} tabId={0}>
+            <ConversationBuilder/>
+        </TabPanel>
+      </DataNode>
+    </DataManager>
+  </>;
 }

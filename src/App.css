@@ -46,3 +46,7 @@
   text-align: center;
   width: 150px;
 }
+
+.react-flow__node-default.selected {
+  font-weight: bolder;
+}

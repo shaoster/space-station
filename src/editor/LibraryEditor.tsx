@@ -1,5 +1,5 @@
-import { Autocomplete, Card, CardContent, Divider, List, ListItem, TextField, TextFieldProps } from "@mui/material";
-import { useReducer } from "react";
+import { Autocomplete, List, ListItem, TextField, TextFieldProps } from "@mui/material";
+import { SyntheticEvent, useReducer } from "react";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
 import { useGameConfiguration } from "./Profiles";
@@ -157,77 +157,32 @@ function libraryUpdateReducer(
   }
 }
 
-export const EditableField = (
-  {fieldLabel, fieldValue} : { fieldLabel: string, fieldValue: any}
+export const LibrarySelector = (
+  { fieldLabel, fieldLibrary, fieldValue, multiple, onChange} :
+  { fieldLabel: string,
+    fieldLibrary: EntityLibrary,
+    fieldValue: any,
+    multiple?:boolean,
+    onChange?: (event: SyntheticEvent, value: any) => void 
+  }
 ) => {
   const {
     gameConfiguration,
   } = useGameConfiguration();
   const renderInput = (params: JSX.IntrinsicAttributes & TextFieldProps) => <TextField {...params} label={fieldLabel} margin="normal"/>;
   // Special case handling for "foreign keys".
-  for (const suffix of ["Id", "Ids"]) {
-    if (fieldLabel.endsWith(suffix)) {
-      const idPrefix = fieldLabel.replace(new RegExp(suffix + "$"), "");
-      const libraryField = idPrefix + "Library";
-      const library = gameConfiguration[libraryField as keyof GameConfiguration];
-      const options = Object.keys(library);
-      const multiple = suffix==="Ids";
-      if (multiple) {
-        return (
-          <Autocomplete
-            defaultValue={fieldValue as string[]}
-            options={options}
-            renderInput={renderInput}
-            multiple
-            fullWidth
-          />
-        );
-      } else {
-        return (
-          <Autocomplete
-            defaultValue={fieldValue}
-            options={options}
-            renderInput={renderInput}
-            fullWidth
-          />
-        );
-      }
-    }
-  }
-  if (typeof(fieldValue) === "object") {
-    // If we hit this, we should probably bail in actual use.
-    return <div>
-      TODO: Auto-Generated UI.
-      <GenericEntityCard entityId={fieldLabel} entity={fieldValue}/>
-    </div>;
-  } else {
-    return <TextField label={fieldLabel} defaultValue={fieldValue} multiline rows={4}/>;
-  }
+  const options = Object.keys(fieldLibrary);
+  return (
+    <Autocomplete
+      value={fieldValue as string[]}
+      options={options}
+      renderInput={renderInput}
+      multiple={multiple}
+      onChange={onChange}
+      fullWidth
+    />
+  );
 }
-
-const EditableData = ( { data } : { data: {} }) => {
-  return <List>
-    {
-    Object.entries(data).map(([key, value]) => (
-      <ListItem key={key}>
-        <EditableField fieldLabel={key} fieldValue={value}/>
-      </ListItem>
-    ))
-    }
-  </List>;
-}
-
-export const GenericEntityCard = (
-  {entityId, entity} : ({entityId: EntityId, entity: IdentifiableEntity})
-) => {
-  return <Card sx={{width: "100%"}} >
-    <CardContent>
-      <TextField value={entityId} label="Identifier"/>
-      <Divider/>
-      <EditableData data={entity}/>
-    </CardContent>
-  </Card>;
-};
 
 export class LibraryEditorBuilder {
   /**

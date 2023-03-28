@@ -96,6 +96,14 @@ export interface DialogueNode {
 
   // For now, this seems like the easiest way to model a game-over. Defaults to false.
   isGameOver?: boolean;
+
+  /**
+   * This is only used in the studio to persist 
+   */
+  position?: {
+    x: number,
+    y: number
+  }
 }
 
 export type DialogueNodeId = string;

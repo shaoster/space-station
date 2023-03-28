@@ -1,6 +1,6 @@
 import { Box, Card, CardContent, Checkbox, Chip, Divider, FormControlLabel, Grid, Table, TableBody, TableCell, TableRow } from "@mui/material";
 import { useEffect, useState } from "react";
-import { MarkerType, ReactFlow, ReactFlowProvider, useEdgesState, useNodesState, useOnSelectionChange } from "reactflow";
+import { Connection, Edge, MarkerType, Node, ReactFlow, ReactFlowProvider, updateEdge, useEdgesState, useNodesState, useOnSelectionChange } from "reactflow";
 import 'reactflow/dist/style.css';
 import { GameConfiguration } from "../glossary/Compendium";
 import { Conversation, ConversationLibrary, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
@@ -11,6 +11,10 @@ type DialogueNodeVisualizer = {
   id: DialogueNodeId,
   dialogueEntryId: DialogueEntryId,
   isGameOver: boolean,
+  position?: {
+    x: number,
+    y: number
+  }
 };
 
 type NextDialogueEdge = {
@@ -28,7 +32,8 @@ function visualizeNode(id: DialogueNodeId, node: DialogueNode) : DialogueNodeVis
   return {
     id: id,
     dialogueEntryId: node.dialogueEntryId,
-    isGameOver: node.isGameOver ?? false
+    isGameOver: node.isGameOver ?? false,
+    position: node.position,
   }
 }
 
@@ -151,7 +156,8 @@ const DialogueNodeArranger = (
 ) => {
   const [selectedNodeId, setSelectedNodeId] = useState<DialogueNodeId | undefined>(initialDialogueNodeId);
   const {
-    data: nodeLibrary
+    data: nodeLibrary,
+    updateData: updateNodeLibrary
   } = useDataManager<DialogueNodeLibrary>();
   useOnSelectionChange({
     onChange: ({ nodes }) => {
@@ -174,7 +180,7 @@ const DialogueNodeArranger = (
       borderRadius: "4px"
     },
     // Find some better positioning protocol, or maybe store the positions. IDK.
-    position: { x: 16, y: 16 + (100 * index) }
+    position: viser.position ?? { x: 16, y: 16 + (100 * index) }
   }));
   const initialEdges = dialogueEdges.map((edge, index) => ({
     id: index + "", // This index probably doesn't matter much(???), so just auto-gen it.
@@ -188,11 +194,9 @@ const DialogueNodeArranger = (
     },
     type: "smoothstep"
   }));
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [edges, _setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
+  // Set up nodes.
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   useEffect(() => {
     setNodes((currentNodes) => 
       currentNodes.map((node) => {
@@ -209,7 +213,52 @@ const DialogueNodeArranger = (
         return node;
       })
     );
-  }, [initialNodes, setNodes])
+  }, [initialNodes, setNodes]);
+  /**
+   *  For now, we just use this to persist positions.
+   */
+  const onNodeDrop = (_evt: React.MouseEvent, _node: Node, nodes: Node[]) => {
+    const newNodeLibrary = {
+      ...nodeLibrary
+    };
+    for (const node of nodes) {
+      const dialogueNode = $get(nodeLibrary, node.id) as DialogueNode;
+      newNodeLibrary[node.id] = {
+        ...dialogueNode,
+        position: node.position
+      };
+    }
+    updateNodeLibrary(newNodeLibrary);
+  };
+
+  // Set up Edges.
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  useEffect(() => {
+    setEdges(initialEdges);
+  }, [initialEdges, setEdges]);
+  const onEdgeUpdate = (oldEdge: Edge<any>, newConnection: Connection) => setEdges((els) => updateEdge(oldEdge, newConnection, els));
+  const onConnect = (params: Edge<any> | Connection) => {
+    const sourceNode = $get(nodeLibrary, params.source ?? undefined) as DialogueNode;
+    const hasDuplicateEdge = typeof (Object.entries(sourceNode.next).find(
+      ([_, targetId]) => targetId === params.target
+    )) !== "undefined";
+    if (hasDuplicateEdge) {
+      return;
+    }
+    // Easy case: No chance for collisions.
+    if (Object.keys(sourceNode.next).length === 0) {
+      updateNodeLibrary({
+        ...nodeLibrary,
+        [params.source as string]: {
+          ...sourceNode,
+          next: {
+            _: params.target as DialogueNodeId
+          }
+        }
+      });
+      console.log("Updated nodeLibrary:", nodeLibrary);
+    }
+  };
 
   return <Grid container style={{
     width: "100%", height: "800px",
@@ -224,7 +273,10 @@ const DialogueNodeArranger = (
         nodes={nodes}
         edges={edges}
         onNodesChange={onNodesChange}
+        onNodeDragStop={onNodeDrop}
         onEdgesChange={onEdgesChange}
+        onEdgeUpdate={onEdgeUpdate}
+        onConnect={onConnect}
         style={{ background: "#d0d0d0"}}
         defaultViewport={{
           x: 0, y: 0, zoom: 1.0

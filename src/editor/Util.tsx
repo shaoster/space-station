@@ -2,7 +2,7 @@
  * This module is meant to hide the side-effecting warts.
  * @packageDocumentation
  */
-import React, { ReactElement, ReactNode, useContext, useEffect, useReducer, useState } from "react";
+import React, { ReactElement, ReactNode, useContext, useEffect, useState } from "react";
 import { HashRouter, Route, Routes, useParams } from "react-router-dom";
 import useLocalStorage from "use-local-storage";
 import { GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
@@ -23,7 +23,7 @@ const SCRATCH_PROFILE = "__DEFAULT__";
  *   - Display data and input controls.
  *   - Combine local updates with updates of descendants and pass up to parent.
  */
-export type DataManager<T = unknown> = {
+export type DataManagerType<T = unknown> = {
   data: T,
   updateData: (data: T) => void
 };
@@ -35,7 +35,7 @@ export type UpdateAction<T, U extends {[key: string] : any}> = {
 
 // It's sort of fine for the context itself not to be generic,
 // since at any point in the tree there should only be one provider available.
-export const DataManagerContext = React.createContext<DataManager | undefined>(undefined); 
+export const DataManagerContext = React.createContext<DataManagerType | undefined>(undefined); 
 
 function bubble<T extends {[key: string | number | symbol] : any}>(
   state: T, action: UpdateAction<any, T>
@@ -47,10 +47,10 @@ function bubble<T extends {[key: string | number | symbol] : any}>(
   }
 };
 
-export function DataManager<T extends {[key: string | number | symbol] : any}>(
-  {data, updateData, children, ...props}: 
+const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
+  {data, updateData, children}: 
   {data?: T, updateData?: (data: T) => void, children: ReactNode}
-) {
+) => {
   const {
     data: contextData,
     updateData: contextUpdater
@@ -68,8 +68,7 @@ export function DataManager<T extends {[key: string | number | symbol] : any}>(
           const dataKey = c.props?.dataKey;
           if (
             dataKey === null ||
-            typeof dataKey === "undefined" ||
-            !(dataKey in actualData)
+            typeof dataKey === "undefined"
           ) {
             throw new Error("Invalid dataKey provided: " + dataKey);
           }
@@ -97,20 +96,27 @@ export function DataManager<T extends {[key: string | number | symbol] : any}>(
 };
 
 /**
+ * Memoizing generic components is kind of wonky in typescript.
+ * https://github.com/DefinitelyTyped/DefinitelyTyped/issues/37087#issuecomment-542793243
+ */
+const typedMemo: <T>(c: T) => T = React.memo;
+export const DataManager = typedMemo(DataManagerInternal);
+
+/**
  * This is a provider target for DataManager.
  * All direct children of DataManager need to be duck-typed to include
  * the dataKey field. 
  */
-export function DataNode(
+export const DataNode = React.memo((
   {dataKey, children} :
   {dataKey?: number | string | null, children: ReactNode}
-) {
+) => {
   return <>
     {children}
   </>;
-}
+});
 
-export function useDataManager<T>() : DataManager<T | undefined> {
+export function useDataManager<T>() : DataManagerType<T | undefined> {
   const dataManager = useContext(DataManagerContext);
   if (typeof dataManager === "undefined") {
     console.log("Datamanager used without parent!");
@@ -119,7 +125,7 @@ export function useDataManager<T>() : DataManager<T | undefined> {
       updateData: () => {}
     };
   }
-  return dataManager as DataManager<T | undefined>;
+  return dataManager as DataManagerType<T | undefined>;
 }
 
 // This is kind of a special case root of the above that I wrote before
@@ -146,9 +152,6 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
   useEffect(() => {
     saveCurrentConfiguration(workingConfiguration);  
   }, [workingConfiguration, saveCurrentConfiguration]);
-  // Generate a run-time dependency graph so we know which 
-
-
   return <GameConfigurationContext.Provider value={{
     gameConfiguration: workingConfiguration,
     updateGameConfiguration: updateWorkingConfiguration

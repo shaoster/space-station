@@ -1,6 +1,5 @@
-import { Autocomplete, Box, List, ListItem, TextField, TextFieldProps } from "@mui/material";
-import { SyntheticEvent, useReducer } from "react";
-import { updateDefaultClause } from "typescript";
+import { Autocomplete, List, ListItem, TextField, TextFieldProps } from "@mui/material";
+import { useReducer } from "react";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
 import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
@@ -162,7 +161,7 @@ export const LibrarySelector = (
   { fieldLabel, fieldLibrary, fieldValue, multiple } :
   { fieldLabel: string,
     fieldLibrary: EntityLibrary,
-    fieldValue: any,
+    fieldValue?: any,
     multiple?:boolean,
   }
 ) => {
@@ -170,15 +169,18 @@ export const LibrarySelector = (
     gameConfiguration,
   } = useGameConfiguration();
   const {
+    data,
     updateData
   } = useDataManager();
+
+  const realValue = fieldValue ?? data;
   
-  const renderInput = (params: JSX.IntrinsicAttributes & TextFieldProps) => <TextField {...params} label={fieldLabel} margin="normal"/>;
+  const renderInput = (params: JSX.IntrinsicAttributes & TextFieldProps) => <TextField {...params} label={fieldLabel} margin="normal" />;
   // Special case handling for "foreign keys".
   const options = Object.keys(fieldLibrary);
   return (
     <Autocomplete
-      value={fieldValue as string[]}
+      value={realValue as string[]}
       options={options}
       renderInput={renderInput}
       multiple={multiple}

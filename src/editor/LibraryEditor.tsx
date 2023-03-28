@@ -1,4 +1,4 @@
-import { Autocomplete, List, ListItem, TextField, TextFieldProps } from "@mui/material";
+import { Autocomplete, Checkbox, FormControlLabel, List, ListItem, TextField, TextFieldProps } from "@mui/material";
 import { useReducer } from "react";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
@@ -276,3 +276,20 @@ export class LibraryEditorBuilder {
     return this.fromLibraryHandler(defaultLibraryHandler);
   }
 }
+
+export const BoundCheckbox = (
+  {label}  : {label?: string}
+) => {
+  const {
+    data: checked,
+    updateData: updateChecked
+  } = useDataManager<boolean>();
+  return (
+    <FormControlLabel
+      control={<Checkbox checked={checked}/>}
+      label={label}
+      onChange={(_evt, val) => updateChecked(val)}
+    />
+  );
+}
+

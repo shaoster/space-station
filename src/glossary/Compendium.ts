@@ -188,6 +188,28 @@ export interface GameConfiguration {
   initialResources: ResourceBundle;
 }
 
+
+// A test example for now.
+const EMPTY_CONVERSATION : Conversation = {
+  characterIds: ["jane", "baz"],
+  initialDialogueNodeId: "0",
+  dialogueNodeLibrary: {
+    "0": {
+      dialogueEntryId: "hello",
+      next: {
+        _: "1"
+      }
+    },
+    "1": {
+      dialogueEntryId: "goodbye",
+      isGameOver: true,
+      next: {}
+    }
+  },
+  locationId: "bar"
+};
+
+
 /**
  * @hidden
  */
@@ -218,7 +240,9 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
       imageId: "jane/portrait" // You are the avatar of humanity!
     }
   },
-  conversationLibrary: {},
+  conversationLibrary: {
+    welcome: EMPTY_CONVERSATION
+  },
   dialogueEntryLibrary: {
     hello: {
       textMarkdown: `One morning, when Gregor Samsa woke from troubled dreams, he found himself transformed in his bed into a horrible vermin. He lay on his armour-like back, and if he lifted his head a little he could see his brown belly, slightly domed and divided by arches into stiff sections. The bedding was hardly able to cover it and seemed ready to slide off any moment. His many legs, pitifully thin compared with the size of the rest of him, waved about helplessly as he looked. "What's happened to me?" he thought.`, 

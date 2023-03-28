@@ -22,7 +22,8 @@ export default function Studio() {
     setActiveTab(newTabIndex);
   };
   const {
-    gameConfiguration
+    gameConfiguration,
+    updateGameConfiguration
   } = useGameConfiguration();
   return <>
     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
@@ -30,7 +31,7 @@ export default function Studio() {
           <Tab label="Conversation Builder" />
         </Tabs>
     </Box>
-    <DataManager data={gameConfiguration}>
+    <DataManager data={gameConfiguration} updateData={updateGameConfiguration}>
       <DataNode dataKey="conversationLibrary">
         <TabPanel activeTab={activeTab} tabId={0}>
             <ConversationBuilder/>

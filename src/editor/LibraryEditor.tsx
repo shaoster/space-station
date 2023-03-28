@@ -1,8 +1,9 @@
-import { Autocomplete, List, ListItem, TextField, TextFieldProps } from "@mui/material";
+import { Autocomplete, Box, List, ListItem, TextField, TextFieldProps } from "@mui/material";
 import { SyntheticEvent, useReducer } from "react";
+import { updateDefaultClause } from "typescript";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
-import { useGameConfiguration } from "./Util";
+import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
 
 export type LibraryField = keyof GameConfiguration;
 export interface LibraryHandler<T extends EntityLibrary, U extends EntityId> {
@@ -158,17 +159,20 @@ function libraryUpdateReducer(
 }
 
 export const LibrarySelector = (
-  { fieldLabel, fieldLibrary, fieldValue, multiple, onChange} :
+  { fieldLabel, fieldLibrary, fieldValue, multiple } :
   { fieldLabel: string,
     fieldLibrary: EntityLibrary,
     fieldValue: any,
     multiple?:boolean,
-    onChange?: (event: SyntheticEvent, value: any) => void 
   }
 ) => {
   const {
     gameConfiguration,
   } = useGameConfiguration();
+  const {
+    updateData
+  } = useDataManager();
+  
   const renderInput = (params: JSX.IntrinsicAttributes & TextFieldProps) => <TextField {...params} label={fieldLabel} margin="normal"/>;
   // Special case handling for "foreign keys".
   const options = Object.keys(fieldLibrary);
@@ -178,7 +182,7 @@ export const LibrarySelector = (
       options={options}
       renderInput={renderInput}
       multiple={multiple}
-      onChange={onChange}
+      onChange={(evt, value) => {updateData(value)}}
       fullWidth
     />
   );
@@ -235,34 +239,28 @@ export class LibraryEditorBuilder {
       libraryFieldSelector: entityHandler.libraryFieldSelector,
       renderLibrary: (config, libraryUpdater) => (
         <List>
-          {
-            genericPreservingEntries(
-              // This is some unfortunate workaround because I don't want to write the type-safe
-              // variants for each library.
-              (config[(entityHandler.libraryFieldSelector as keyof GameConfiguration)] as V)
-            ).map(([key, entity] : [T, U], ) => 
-              <ListItem key={key}>
-                {
-                  entityHandler.renderEntity(
-                    config,
-                    libraryUpdater,
-                    key, 
-                    entity
-                  )
-                }
-              </ListItem>
-            )
-          } 
-          {
-            <ListItem>
-                {
-                  entityHandler.renderEntity(
-                    config,
-                    libraryUpdater,
-                  )
-                }
-            </ListItem>
-          }
+          <DataManager>
+            {
+              genericPreservingEntries(
+                // This is some unfortunate workaround because I don't want to write the type-safe
+                // variants for each library.
+                (config[(entityHandler.libraryFieldSelector as keyof GameConfiguration)] as V)
+              ).map(([key, entity] : [T, U], ) => 
+                <DataNode dataKey={key} key={key}>
+                  <ListItem key={key}>
+                    {
+                      entityHandler.renderEntity(
+                        config,
+                        libraryUpdater,
+                        key, 
+                        entity
+                      )
+                    }
+                  </ListItem>
+                </DataNode>
+              )
+            } 
+          </DataManager>
         </List>
       ),
       validateDataDependencies: (configuration, library) => {

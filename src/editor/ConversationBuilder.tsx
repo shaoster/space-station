@@ -3,7 +3,7 @@ import { MarkerType, ReactFlow, ReactFlowProvider, useEdgesState, useNodesState,
 import { GameConfiguration } from "../glossary/Compendium";
 import { Conversation, ConversationId, ConversationLibrary, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
 import { LibrarySelector, EntityHandler, LibraryEditorBuilder } from "./LibraryEditor";
-import { useGameConfiguration } from "./Util";
+import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
 import 'reactflow/dist/style.css';
 import { useState } from "react";
 
@@ -14,7 +14,6 @@ export const ConversationSelector = (
   const {
     gameConfiguration : { conversationLibrary },
   } = useGameConfiguration();
-
   return (
     <Select onChange={(event) => selectConversation(event.target.value)} value={currentSelectionId} label="Conversation">
       {
@@ -31,30 +30,6 @@ export const ConversationSelector = (
     </Select>
   );
 };
-
-// A test example for now.
-const EMPTY_CONVERSATION : Conversation = {
-  characterIds: ["jane", "baz"],
-  initialDialogueNodeId: "0",
-  dialogueNodeLibrary: {
-    "0": {
-      dialogueEntryId: "hello",
-      next: {
-        _: "1"
-      }
-    },
-    "1": {
-      dialogueEntryId: "goodbye",
-      isGameOver: true,
-      next: {}
-    }
-  },
-  locationId: "bar"
-};
-
-const newConversation : () => Conversation = () => ({
-  ...EMPTY_CONVERSATION
-});
 
 type DialogueNodeVisualizer = {
   id: DialogueNodeId,
@@ -110,8 +85,7 @@ const GraphEntityEditor = (
 */
 
 const DialogueNodeEditor = (
-  {id, nodeLibrary, updateNode} :
-  {id?: DialogueNodeId, nodeLibrary: DialogueNodeLibrary, updateNode: (id: DialogueNodeId, node: DialogueNode) => void}
+  {id} : {id?: DialogueNodeId}
 ) => {
   const {
     gameConfiguration: {
@@ -121,7 +95,11 @@ const DialogueNodeEditor = (
       locationLibrary,
     }
   } = useGameConfiguration();
-  const node = $get(nodeLibrary, id);
+  const {
+    data,
+    updateData
+  } = useDataManager<DialogueNode>();
+  const node = data;
   const entry = $get(dialogueEntryLibrary, node?.dialogueEntryId);
   const speaker = entry?.speakerId;
   const text = entry?.textMarkdown;
@@ -172,10 +150,12 @@ const DialogueNodeEditor = (
  * the selected node.
  */
 const DialogueNodeArranger = (
-  {conversation, updateConversation} :
-  {conversation : Conversation, updateConversation: (value: Conversation) => void}
+  {initialDialogueNodeId} : {initialDialogueNodeId : DialogueNodeId}
 ) => {
-  const [selectedNodeId, setSelectedNodeId] = useState<DialogueNodeId | undefined>(conversation.initialDialogueNodeId);
+  const {
+    data: nodeLibrary, updateData: updateNodeLibrary
+  } = useDataManager<DialogueNodeLibrary>();
+  const [selectedNodeId, setSelectedNodeId] = useState<DialogueNodeId | undefined>(initialDialogueNodeId);
   useOnSelectionChange({
     onChange: ({ nodes }) => {
       setSelectedNodeId(nodes.find(n => n.selected)?.id);
@@ -184,11 +164,11 @@ const DialogueNodeArranger = (
   const {
     nodeVisualizers,
     dialogueEdges
-  } = summarizeDialogueLibrary(conversation.dialogueNodeLibrary);
+  } = summarizeDialogueLibrary(nodeLibrary as DialogueNodeLibrary);
   const initialNodes = nodeVisualizers.map((viser, index) => ({
     id: viser.id,
     data: {
-      label: (viser.id === conversation.initialDialogueNodeId ? 
+      label: (viser.id === initialDialogueNodeId ? 
         "ROOT: " + viser.dialogueEntryId : viser.dialogueEntryId),
     },
     selected: selectedNodeId === viser.id,
@@ -216,12 +196,9 @@ const DialogueNodeArranger = (
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [edges, _setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const updateDialogueNode = (nodeId: DialogueNodeId, nodeValue: DialogueNode) => {
-    updateConversation({
-      ...conversation,
-      dialogueNodeLibrary: {
-        ...conversation.dialogueNodeLibrary,
-        [nodeId]: nodeValue
-      }
+    updateNodeLibrary({
+      ...nodeLibrary,
+      [nodeId]: nodeValue
     });
   };
   return <Grid container style={{
@@ -230,11 +207,11 @@ const DialogueNodeArranger = (
     padding: "0px", marginTop: "4px"
   }}>
     <Grid item xs={4}>
-      <DialogueNodeEditor
-        id={selectedNodeId}
-        nodeLibrary={conversation.dialogueNodeLibrary}
-        updateNode={updateDialogueNode}
-      />
+      <DataManager>
+        <DataNode dataKey={selectedNodeId}>
+          <DialogueNodeEditor id={selectedNodeId}/>
+        </DataNode>
+      </DataManager>
     </Grid>
     <Grid item xs={8}>
       <ReactFlow
@@ -272,27 +249,42 @@ const ConversationCard = (
     <Card sx={{width: "100%"}}>
       <CardContent>
         <TextField defaultValue={id} label="Identifier" margin="normal"/>
-        <Divider/>
-        <LibrarySelector
-          fieldLabel={"Main Location"} 
-          fieldLibrary={locationLibrary}
-          fieldValue={conversation.locationId}
-        />
-        <LibrarySelector
-          fieldLabel={"Characters Present"}
-          fieldLibrary={characterLibrary}
-          fieldValue={conversation.characterIds}
-          multiple
-        />
-        <Divider>
-          <Chip label="Dialogue Arranger" />
-        </Divider>
-        <ReactFlowProvider>
-          <DialogueNodeArranger
-            conversation={conversation}
-            updateConversation={updateConversation}
-        />
-        </ReactFlowProvider>
+        <DataManager>
+          <DataNode dataKey="locationId">
+            <Divider/>
+            <LibrarySelector
+              key="location"
+              fieldLabel={"Main Location"} 
+              fieldLibrary={locationLibrary}
+              fieldValue={conversation.locationId}
+            />
+          </DataNode>
+          <DataNode dataKey="characterIds">
+            <LibrarySelector
+              key="characters"
+              fieldLabel={"Characters Present"}
+              fieldLibrary={characterLibrary}
+              fieldValue={conversation.characterIds}
+              multiple
+            />
+          </DataNode>
+          <DataNode dataKey="initialDialogueNodeId">
+            <LibrarySelector
+              key="root"
+              fieldLabel={"Initial Dialogue"}
+              fieldLibrary={conversation.dialogueNodeLibrary}
+              fieldValue={conversation.initialDialogueNodeId}
+            />
+          </DataNode>
+          <DataNode dataKey="dialogueNodeLibrary">
+            <Divider>
+              <Chip label="Dialogue Arranger" />
+            </Divider>
+            <ReactFlowProvider>
+              <DialogueNodeArranger initialDialogueNodeId={conversation.initialDialogueNodeId}/>
+            </ReactFlowProvider>
+          </DataNode>
+        </DataManager>
       </CardContent>
     </Card>
   );
@@ -305,8 +297,8 @@ const renderConversation = (
   maybeValue?: Conversation
 ) => {
   const id = maybeId ?? "new_conversation";
-  const conversation = maybeValue ?? newConversation();
-  return <ConversationCard id={id} maybeConversation={conversation} updateConversationLibrary={function (id: string, conversation: Conversation): void {
+  const conversation = maybeValue;
+  return <ConversationCard key={id} id={id} maybeConversation={conversation} updateConversationLibrary={function (id: string, conversation: Conversation): void {
     throw new Error("Function not implemented.");
   } }/>;
 }
@@ -333,5 +325,12 @@ const conversationHandler : EntityHandler<ConversationId, Conversation, Conversa
 
 export default function ConversationBuilder() {
   const ConversationEditor = LibraryEditorBuilder.fromEntityHandler(conversationHandler);
+  const {
+    data: conversationLibrary,
+    updateData: updateConversationLibrary
+  } = useDataManager<ConversationLibrary>();
+  const conversationIds = Object.keys(conversationLibrary as ConversationLibrary);
+  // TODO: Use routing for this part.
+  const [conversationId, setConversationId] = useState(conversationIds.find(()=>true));
   return <ConversationEditor/>;
 }

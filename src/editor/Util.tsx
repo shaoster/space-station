@@ -37,24 +37,29 @@ export type UpdateAction<T, U extends {[key: string] : any}> = {
 // since at any point in the tree there should only be one provider available.
 export const DataManagerContext = React.createContext<DataManager | undefined>(undefined); 
 
-export function DataManager<T extends {[key: string] : any}>(
-  {data, children, ...props}: 
-  {data?: T, children: ReactNode}
+function bubble<T extends {[key: string | number | symbol] : any}>(
+  state: T, action: UpdateAction<any, T>
 ) {
-  const reduce = (state: T, action: UpdateAction<any, T>) => {
-    return {
-      ...state,
-      [action.fieldName]: {
-        ...action.data
-      }
-    }
-  };
-  const contextData = useContext(DataManagerContext);
+  console.log("Bubble called with ", action);
+  return {
+    ...state,
+    [action.fieldName]: action.data
+  }
+};
+
+export function DataManager<T extends {[key: string | number | symbol] : any}>(
+  {data, updateData, children, ...props}: 
+  {data?: T, updateData?: (data: T) => void, children: ReactNode}
+) {
+  const {
+    data: contextData,
+    updateData: contextUpdater
+  } = useDataManager<T>();
   const actualData = (data ?? contextData) as T | undefined;
   if (typeof actualData === "undefined") {
     throw new Error("DataManager must have data at its root, at the very least.");
   }
-  const [state, dispatch] = useReducer(reduce, actualData as T);
+  const realUpdater = updateData ?? contextUpdater;
   return <>
     {
       React.Children.map(
@@ -71,10 +76,14 @@ export function DataManager<T extends {[key: string] : any}>(
           const providerContent = {
             data: actualData[dataKey],
             updateData: (updatedItem: any) => {
-              dispatch({
+              // Bubble up.
+              const action = {
                 fieldName: (dataKey as keyof typeof data),
                 data: updatedItem
-              })
+              };
+              console.log("Dispatching with:", action);
+              const newState = bubble(actualData, action);
+              realUpdater(newState);
             }
           };
           return (
@@ -94,19 +103,23 @@ export function DataManager<T extends {[key: string] : any}>(
  */
 export function DataNode(
   {dataKey, children} :
-  {dataKey: number | string, children: ReactNode}
+  {dataKey?: number | string | null, children: ReactNode}
 ) {
   return <>
     {children}
   </>;
 }
 
-export function useDataManager() : DataManager {
+export function useDataManager<T>() : DataManager<T | undefined> {
   const dataManager = useContext(DataManagerContext);
   if (typeof dataManager === "undefined") {
-    throw new Error("Missing DataManagerContext.Provider!");
+    console.log("Datamanager used without parent!");
+    return {
+      data: undefined,
+      updateData: () => {}
+    };
   }
-  return dataManager;
+  return dataManager as DataManager<T | undefined>;
 }
 
 // This is kind of a special case root of the above that I wrote before

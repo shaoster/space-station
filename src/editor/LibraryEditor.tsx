@@ -1,6 +1,6 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import { Autocomplete, Box, Button, Checkbox, FormControlLabel, List, ListItem, Tab, Tabs, TextField, TextFieldProps } from "@mui/material";
-import { useCallback, useReducer } from "react";
+import { PropsWithChildren, useCallback, useReducer } from "react";
 import { Link, Route, Routes } from "react-router-dom";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
@@ -299,8 +299,8 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
   {
     children, newEntity, validate
   } : {
-    children: React.ReactNode, newEntity: () => T, validate?: (entity: T) => boolean
-  }
+    newEntity: () => T, validate?: (entity: T) => boolean
+  } & PropsWithChildren
 ) {
   const {
     data: library,
@@ -308,10 +308,8 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
   } = useDataManager<U>();
   const routeMap : RouteMap<U> = Object.fromEntries(
     Object.keys(library as U).map((k) => {
-      const ChildEditor = () => <>{children}</>;
       return [k, {
         label: k,
-        component: ChildEditor,
         propertyKey: k,
       }];
     })
@@ -385,7 +383,7 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
                 updateData={updateLibrary}
               >
                 <DataNode dataKey={le.label}>
-                  <le.component/>
+                  {children}
                 </DataNode>
               </DataManager>
             );

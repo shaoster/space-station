@@ -202,7 +202,7 @@ export type RouteLabel = string;
 export type RoutePattern = string;
 export type EntityEditor<T> = {
   label: RouteLabel,
-  component: React.FunctionComponent,
+  component?: React.FunctionComponent,
   propertyKey?: keyof T
   defaultTo?: string,
 };

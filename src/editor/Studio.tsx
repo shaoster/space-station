@@ -36,12 +36,16 @@ export default function Studio() {
     <Routes>
       {
         Object.entries(routeMap).map(([route, le]) => {
-          const dataNodeComponent=<DataManager key={le.label} data={gameConfiguration} updateData={updateGameConfiguration}>
-            <DataNode dataKey={le.propertyKey}>
-              <le.component/>
-            </DataNode>
-          </DataManager>;
-          return <Route key={le.label} path={route} element={dataNodeComponent}/>;
+          if (le.component) {
+            const MaybeComponent = le?.component as React.FunctionComponent;
+            const dataNodeComponent = <DataManager key={le.label} data={gameConfiguration} updateData={updateGameConfiguration}>
+              <DataNode dataKey={le.propertyKey}>
+                <MaybeComponent/>
+              </DataNode>
+            </DataManager>;
+            return <Route key={le.label} path={route} element={dataNodeComponent}/>;
+          }
+          return <></>;
         })
       }
     </Routes>

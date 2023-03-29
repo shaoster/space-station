@@ -318,13 +318,11 @@ const DialogueNodeCreator = (
 const DialogueNodeArranger = (
   {initialDialogueNodeId} : {initialDialogueNodeId : DialogueNodeId}
 ) => {
+  const [selection, setSelection] = useState<Selection | undefined>(undefined);
   const {
     data: nodeLibrary,
     updateData: updateNodeLibrary
   } = useDataManager<DialogueNodeLibrary>();
-
-  const [selection, setSelection] = useState<Selection | undefined>(undefined);
-
   // We want to be careful about which aspects of the node inputs come from props
   // and which ones are are internal to the react-flow.
   // The key piece from the latter bucket is the notion of which object is selected
@@ -607,12 +605,8 @@ const validateDataDependencies = (
 };
 
 export default function ConversationEditor() {
-  const {
-    data: conversationLibrary,
-  } = useDataManager<ConversationLibrary>();
-  const conversationIds = Object.keys(conversationLibrary as ConversationLibrary);
-  // TODO: Use routing for this part.
-  return <LibraryEditor newEntity={() => ({...EXAMPLE_CONVERSATION})}>
+  const newConversation = useCallback(() => ({...EXAMPLE_CONVERSATION}), []);
+  return <LibraryEditor newEntity={newConversation}>
     <ConversationCard/>
   </LibraryEditor>;
 }

@@ -1,12 +1,11 @@
 import CloseIcon from "@mui/icons-material/Close";
 import { Alert, Box, Button, Card, CardContent, Chip, Divider, Grid, IconButton, Stack, Table, TableBody, TableCell, TableRow, TextField, Typography } from "@mui/material";
-import { setSelectionRange } from "@testing-library/user-event/dist/utils";
-import { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Connection, Edge, MarkerType, Node, ReactFlow, ReactFlowProvider, updateEdge, useEdgesState, useNodesState, useOnSelectionChange } from "reactflow";
 import 'reactflow/dist/style.css';
-import { GameConfiguration } from "../glossary/Compendium";
+import { EXAMPLE_CONVERSATION, GameConfiguration } from "../glossary/Compendium";
 import { Conversation, ConversationLibrary, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
-import { BoundCheckbox, LibrarySelector } from "./LibraryEditor";
+import { BoundCheckbox, LibraryEditor, LibrarySelector } from "./LibraryEditor";
 import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
 
 type DialogueNodeVisualizer = {
@@ -536,7 +535,7 @@ const DialogueNodeArranger = (
   </Grid>;
 };
 
-const ConversationEditor = () => {
+const ConversationCard = () => {
   const {
     gameConfiguration : {
       characterLibrary,
@@ -552,7 +551,6 @@ const ConversationEditor = () => {
         <ReactFlowProvider>
           <DataManager>
             <DataNode key="locationId" dataKey="locationId">
-              <Divider/>
               <LibrarySelector
                 key="location"
                 fieldLabel={"Main Location"} 
@@ -608,16 +606,13 @@ const validateDataDependencies = (
   return entity.initialDialogueNodeId in entity.dialogueNodeLibrary;
 };
 
-export default function ConversationBuilder() {
+export default function ConversationEditor() {
   const {
     data: conversationLibrary,
   } = useDataManager<ConversationLibrary>();
   const conversationIds = Object.keys(conversationLibrary as ConversationLibrary);
   // TODO: Use routing for this part.
-  const [conversationId] = useState(conversationIds.find(()=>true));
-  return <DataManager>
-    <DataNode dataKey={conversationId}>
-      <ConversationEditor/>
-    </DataNode>
-  </DataManager>;
+  return <LibraryEditor newEntity={() => ({...EXAMPLE_CONVERSATION})}>
+    <ConversationCard/>
+  </LibraryEditor>;
 }

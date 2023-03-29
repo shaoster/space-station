@@ -3,7 +3,7 @@
  * @packageDocumentation
  */
 import React, { ReactElement, ReactNode, useContext, useEffect, useState } from "react";
-import { HashRouter, Route, Routes, useParams } from "react-router-dom";
+import { HashRouter, matchPath, Route, Routes, useLocation, useParams, useResolvedPath } from "react-router-dom";
 import useLocalStorage from "use-local-storage";
 import { GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
 
@@ -48,8 +48,11 @@ function bubble<T extends {[key: string | number | symbol] : any}>(
 };
 
 const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
-  {data, updateData, children}: 
-  {data?: T, updateData?: (data: T) => void, children: ReactNode}
+  {data, updateData, validate, children}: 
+  {
+    data?: T, updateData?: (data: T) => void,
+    validate?: (key: keyof T) => boolean, children: ReactNode
+  }
 ) => {
   const {
     data: contextData,
@@ -70,7 +73,8 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
             dataKey === null ||
             typeof dataKey === "undefined"
           ) {
-            throw new Error("Invalid dataKey provided: " + dataKey);
+            console.log("Invalid dataKey provided: " + dataKey);
+            return c;
           }
           const providerContent = {
             data: actualData[dataKey],
@@ -139,6 +143,7 @@ export type GameConfigurationManager = {
 const GameConfigurationContext = React.createContext<GameConfigurationManager | undefined>(undefined);
 
 export const GameConfigurationProvider = ({profileName, children} : {profileName: string | undefined, children: ReactNode}) => {
+  console.log("Loading profile from:", profileName)
   const [savedConfiguration, saveCurrentConfiguration] = useLocalStorage<GameConfiguration | undefined>(
     profileName ?? SCRATCH_PROFILE,
     undefined
@@ -176,7 +181,7 @@ export const SaveProfileProvider = ({children} : {children: ReactNode}) => {
   </ProfileNameProvider>;
   return <HashRouter basename="/">
     <Routes>
-      <Route path="/profiles/:profileName" element={rebasedChildren}/>
+      <Route path=":profileName/*" element={rebasedChildren}/>
     </Routes>
   </HashRouter>;
 };
@@ -191,3 +196,37 @@ export const useGameConfiguration = () => {
   }
   return gameConfigurationManager;
 };
+
+// Adapted from https://mui.com/material-ui/guides/routing/#tabs
+export type RouteLabel = string;
+export type RoutePattern = string;
+export type EntityEditor<T> = {
+  label: RouteLabel,
+  component: React.FunctionComponent,
+  propertyKey?: keyof T
+  defaultTo?: string,
+};
+
+export type RouteMap<T> = {
+  [key: RoutePattern] : EntityEditor<T>
+};
+
+export function useRelativeRouteMatch<T>(routeMap: RouteMap<T>) {
+  const urlPrefix = useResolvedPath("").pathname;
+  const { pathname } = useLocation();
+  if (!pathname.startsWith(urlPrefix)) {
+    throw new Error("Something went wrong with routing.");
+  }
+  const strippedPath = pathname.slice(urlPrefix.length);
+  // Try our best to ensure descendant ordering.
+  const patterns = Object.keys(routeMap).sort((a, b) => a.length - b.length);
+  for (let i = 0; i < patterns.length; i += 1) {
+    const possibleMatch = matchPath({
+      path: patterns[i]
+    }, strippedPath);
+    if (possibleMatch !== null) {
+      return possibleMatch?.pattern?.path;
+    }
+  }
+  return undefined;
+}

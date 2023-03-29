@@ -190,7 +190,7 @@ export interface GameConfiguration {
 
 
 // A test example for now.
-const EMPTY_CONVERSATION : Conversation = {
+export const EXAMPLE_CONVERSATION : Conversation = {
   characterIds: ["jane", "baz"],
   initialDialogueNodeId: "0",
   dialogueNodeLibrary: {
@@ -241,7 +241,7 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
     }
   },
   conversationLibrary: {
-    welcome: EMPTY_CONVERSATION
+    welcome: EXAMPLE_CONVERSATION
   },
   dialogueEntryLibrary: {
     hello: {

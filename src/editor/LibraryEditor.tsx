@@ -1,8 +1,10 @@
-import { Autocomplete, Checkbox, FormControlLabel, List, ListItem, TextField, TextFieldProps } from "@mui/material";
-import { useReducer } from "react";
+import AddCircleIcon from '@mui/icons-material/AddCircle';
+import { Autocomplete, Box, Button, Checkbox, FormControlLabel, List, ListItem, Tab, Tabs, TextField, TextFieldProps } from "@mui/material";
+import { useCallback, useReducer } from "react";
+import { Link, Route, Routes } from "react-router-dom";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
-import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
+import { DataManager, DataNode, EntityEditor, RouteMap, useDataManager, useGameConfiguration, useRelativeRouteMatch } from "./Util";
 
 export type LibraryField = keyof GameConfiguration;
 export interface LibraryHandler<T extends EntityLibrary, U extends EntityId> {
@@ -293,3 +295,104 @@ export const BoundCheckbox = (
   );
 }
 
+export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibrary>(
+  {
+    children, newEntity, validate
+  } : {
+    children: React.ReactNode, newEntity: () => T, validate?: (entity: T) => boolean
+  }
+) {
+  const {
+    data: library,
+    updateData: updateLibrary
+  } = useDataManager<U>();
+  const routeMap : RouteMap<U> = Object.fromEntries(
+    Object.keys(library as U).map((k) => {
+      const ChildEditor = () => <>{children}</>;
+      return [k, {
+        label: k,
+        component: ChildEditor,
+        propertyKey: k,
+      }];
+    })
+  );
+  const currentTab = useRelativeRouteMatch<U>(routeMap);
+  const handleCreate = useCallback(() => {
+    let i = 0;
+    while (true) {
+      const label = "NEW_" + i;
+      if (label in (library as U)) {
+        i++;
+        continue;
+      }
+      updateLibrary({
+        ...(library as U),
+        [label]: newEntity()
+      });
+      break;
+    }
+  }, [library, updateLibrary, newEntity]);
+
+  /* TODO: Referential integrity... */
+  const handleRename = useCallback((previousName: keyof U, newName: keyof U) => {
+    if (newName in (library as U)) {
+      throw new Error(`Duplicate name [${String(newName)}] not allowed.`);
+    }
+    const {
+      [previousName]: removed,
+      ...strippedLibrary
+    } = library;
+    updateLibrary({
+      ...strippedLibrary as U,
+      [newName]: (removed as T)
+    });
+  }, [library, updateLibrary]);
+
+  /* TODO: Referential integrity... */
+  const handleRemove = useCallback((previousName: keyof U) => {
+    const {
+      [previousName]: removed,
+      ...strippedLibrary
+    } = library;
+    updateLibrary({
+      ...strippedLibrary as U,
+    });
+  }, [library, updateLibrary]);
+  
+  return (
+    <Box sx={{flexGrow: 1, display: "flex"}}>
+      <Tabs
+        orientation="vertical"
+        variant="scrollable"
+        value={currentTab}
+        >
+        {
+        Object.entries(routeMap).map(
+          ([k, v] : [string, EntityEditor<U>]) => (
+          <Tab key={v.label} label={v.label} value={k} to={k} component={Link}/>
+          )
+        )
+        }
+        <Tab key="__NEW___" component={Button} startIcon={<AddCircleIcon/>} onClick={handleCreate} />
+      </Tabs>
+      <Routes>
+        {
+          Object.entries(routeMap).map(([route, le]) => {
+            const dataNodeComponent=(
+              <DataManager
+                key={le.label}
+                data={library}
+                updateData={updateLibrary}
+              >
+                <DataNode dataKey={le.label}>
+                  <le.component/>
+                </DataNode>
+              </DataManager>
+            );
+            return <Route key={le.label} path={route} element={dataNodeComponent}/>;
+          })
+        }
+      </Routes>
+    </Box>
+  );
+}

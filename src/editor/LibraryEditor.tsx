@@ -1,5 +1,5 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import { Autocomplete, Box, Button, Checkbox, FormControlLabel, List, ListItem, Tab, Tabs, TextField, TextFieldProps } from "@mui/material";
+import { Alert, Autocomplete, Box, Button, Checkbox, FormControlLabel, List, ListItem, Tab, Tabs, TextField, TextFieldProps } from "@mui/material";
 import { PropsWithChildren, useCallback, useReducer } from "react";
 import { Link, Route, Routes } from "react-router-dom";
 import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
@@ -390,6 +390,13 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
             return <Route key={le.label} path={route} element={dataNodeComponent}/>;
           })
         }
+        <Route key="*" path="*" element={
+          <Box sx={{width: "100%", padding: 4}}>
+              <Alert severity="info">
+                Select one of the items to the left.
+              </Alert>
+          </Box>
+        } />
       </Routes>
     </Box>
   );

@@ -1,4 +1,5 @@
-import { Box, Tab, Tabs } from "@mui/material";
+import { Alert, Box, Modal, Tab, Tabs } from "@mui/material";
+import { useState } from "react";
 import { Link, Route, Routes } from "react-router-dom";
 import { GameConfiguration } from "../glossary/Compendium";
 import ConversationEditor from "./ConversationEditor";
@@ -6,6 +7,7 @@ import SummaryViewer from "./SummaryViewer";
 import { DataManager, DataNode, RouteMap, useGameConfiguration, useRelativeRouteMatch } from "./Util";
 
 export default function Studio() {
+  const [errorMsg, setErrorMsg] = useState(undefined);
   const routeMap : RouteMap<GameConfiguration> = {
     "summary": {
       label: "Summary",
@@ -21,9 +23,17 @@ export default function Studio() {
   const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap);
   const {
     gameConfiguration,
-    updateGameConfiguration
   } = useGameConfiguration();
+  
   return <>
+    <Modal
+      open={typeof errorMsg !== "undefined"}
+      onClose={()=>{setErrorMsg(undefined)}}
+    >
+      <Alert severity="error">
+        {errorMsg}
+      </Alert>
+    </Modal>
     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <Tabs value={currentTab}>
         {
@@ -38,7 +48,7 @@ export default function Studio() {
         Object.entries(routeMap).map(([route, le]) => {
           if (le.component) {
             const MaybeComponent = le?.component as React.FunctionComponent;
-            const dataNodeComponent = <DataManager key={le.label} data={gameConfiguration} updateData={updateGameConfiguration}>
+            const dataNodeComponent = <DataManager key={le.label} data={gameConfiguration}>
               <DataNode dataKey={le.propertyKey}>
                 <MaybeComponent/>
               </DataNode>

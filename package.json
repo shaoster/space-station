@@ -15,6 +15,7 @@
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "boardgame.io": "^0.50.2",
+    "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-error-boundary": "^4.0.3",
@@ -52,6 +53,7 @@
     ]
   },
   "devDependencies": {
+    "@types/lodash": "^4.14.192",
     "gh-pages": "^5.0.0",
     "typedoc": "^0.23.28"
   },

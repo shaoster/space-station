@@ -2,12 +2,27 @@
  * This module is meant to hide the side-effecting warts.
  * @packageDocumentation
  */
-import React, { ReactElement, ReactNode, useContext, useEffect, useState } from "react";
+import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { HashRouter, matchPath, Route, Routes, useLocation, useParams, useResolvedPath } from "react-router-dom";
 import useLocalStorage from "use-local-storage";
-import { GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
+import { EntityId, GameConfiguration, IdentifiableEntity, newGameConfiguration } from "../glossary/Compendium";
+
+/**
+ * idk about this dependency, but I'd rather not waste time maintaining things
+ * like object/array equality.
+ */
+import _ from 'lodash';
 
 const SCRATCH_PROFILE = "__DEFAULT__";
+
+/**
+ * Child interface that encapsulates dependencies between objects.
+ */
+export interface DataLeaser {
+  addDependent: (dependent: string[], dependency: string[]) => void;
+  removeDependent: (dependent: string[], dependency: string[]) => void;
+  getDependents: (dependency: string[])  => string[][];
+};
 
 /**
  * The motivation behind this thing is to avoid repetitive-and error-prone boiler plate stitching together
@@ -24,8 +39,16 @@ const SCRATCH_PROFILE = "__DEFAULT__";
  *   - Combine local updates with updates of descendants and pass up to parent.
  */
 export type DataManagerType<T = unknown> = {
+  /**
+   * The "address" of the described data.
+   */
+  pathPrefix: string[],
   data: T,
-  updateData: (data: T) => void
+  updateData: (data: T) => void,
+  /**
+   * Child object for managing referential integrity.
+   */
+  dataLeaser?: DataLeaser,
 };
 
 export type UpdateAction<T, U extends {[key: string] : any}> = {
@@ -39,29 +62,113 @@ export const DataManagerContext = React.createContext<DataManagerType | undefine
 
 function bubble<T extends {[key: string | number | symbol] : any}>(
   state: T, action: UpdateAction<any, T>
-) {
+) : T {
   console.log("Bubble called with ", action);
   return {
     ...state,
     [action.fieldName]: action.data
-  }
+  } as T
 };
 
+export type DependencyLister<T> = (prefix: string[], key: string, entity: T) => string[][];
+
+/**
+ * Models inbound dependencies on a particularly entity as a nested dictionary.
+ * The key operations of add/remove/check should all be O(1).
+ */
+export type PermitsType = {[key: string] : {[key: string] : undefined}};
+
 const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
-  {data, updateData, validate, children}: 
+  {data, updateData, getDependencies, children}: 
   {
-    data?: T, updateData?: (data: T) => void,
-    validate?: (key: keyof T) => boolean, children: ReactNode
+    data?: T,
+    updateData?: (data: T) => void,
+    getDependencies?: DependencyLister<T>,
+    children: ReactNode
   }
 ) => {
   const {
+    dataLeaser: contextLeaser,
+    pathPrefix: contextPath,
     data: contextData,
-    updateData: contextUpdater
+    updateData: contextUpdater,
   } = useDataManager<T>();
   const actualData = (data ?? contextData) as T | undefined;
+  const actualPath = contextPath ?? [];
   if (typeof actualData === "undefined") {
     throw new Error("DataManager must have data at its root, at the very least.");
   }
+
+  const actualGetDependencies = useCallback((p: string[], k: string, v: T) => {
+    if (typeof getDependencies === "undefined") {
+      return [];
+    }
+    return getDependencies(p, k, v);
+  }, [getDependencies]);
+
+  // All of this lease management stuff is only relevant in the root.
+  // You must leave your name to get a permit, and it's your responsibility as
+  // the dependent to make sure you don't have duplicate permits.
+  const [permits, setPermits] = useState<PermitsType>({});
+  const leaser = contextLeaser ?? {
+    addDependent: function(dependent, dependency): void {
+      // First deal with the inbound side.
+      const dependentPath = JSON.stringify(dependent);
+      const dependencyPath = JSON.stringify(dependency);
+      if (dependencyPath in permits) {
+        setPermits({
+          ...permits,
+          [dependencyPath]: {
+            ...permits[dependencyPath],
+            [dependentPath]: undefined
+          },
+        });
+      } else {
+        setPermits({
+          ...permits,
+          [dependencyPath]: {
+            [dependentPath]: undefined,
+          }
+        });
+      }
+    },
+    removeDependent: function(dependent, dependency): void {
+      const dependentPath = JSON.stringify(dependent);
+      const dependencyPath = JSON.stringify(dependency);
+      if (!(dependencyPath in permits)) {
+        throw new Error(`There is no dependency on ${dependencyPath} to remove.`);
+      }
+      if (!(dependentPath in permits[dependencyPath])) {
+        throw new Error(`${dependentPath} has no dependency on ${dependencyPath} to remove.`);
+      }
+      const {
+        [dependentPath]: removed,
+        ...remainingInbound
+      } = permits[dependencyPath];
+
+      if (Object.keys(remainingInbound).length === 0) {
+        // No more inbound paths!
+        const {
+          [dependencyPath]: removed,
+          ...remainingOutbound
+        } = permits
+        setPermits(remainingOutbound);
+      } else {
+        setPermits({
+          ...permits,
+          [dependencyPath]: remainingInbound
+        });
+      }
+    },
+    getDependents: function(dependency) {
+      const dependencyPath = JSON.stringify(dependency);
+      return dependencyPath in permits ?
+        Object.keys(permits[dependencyPath]).map(p => JSON.parse(p) as string[])
+        : [];
+    }
+  };
+
+  const realLeaser = contextLeaser ?? leaser;
   const realUpdater = updateData ?? contextUpdater;
   return <>
     {
@@ -76,18 +183,53 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
             console.log("Invalid dataKey provided: " + dataKey);
             return c;
           }
+          const pathPrefix = actualPath.concat(dataKey);
+          const data = actualData[dataKey];
           const providerContent = {
-            data: actualData[dataKey],
-            updateData: (updatedItem: any) => {
+            data,
+            pathPrefix,
+            updateData: function(updatedItem: any) {
+              // The key idea for referential integrity here is that
+              // we might be on the inbound side or outbound side of
+              // a data dependency, and we might be both.
+              // If we're outbound, we only need to reject invalid deletions.
+              // If we're inbound, we need to add or remove edges.
+              const originalKeys = new Set(Object.keys(actualData));
+              const updatedKeys = new Set(Object.keys(updatedItem));
+              const addedKeys = Object.keys(updatedItem).filter(
+                (k) => !originalKeys.has(k)
+              );
+              const deletedKeys = Object.keys(originalKeys).filter(
+                (k) => !updatedKeys.has(k)
+              );
+              for (const deletedKey in deletedKeys) {
+                const deletedPath = actualPath.concat(deletedKey);
+                const maybeDependents = realLeaser.getDependents(deletedPath);
+                if (maybeDependents.length !== 0) {
+                  // Reject invalid deletions.
+                  throw new Error(`${maybeDependents[0]}`);
+                }
+                // Remove outdated edges.
+                for (const dependency of actualGetDependencies(pathPrefix, dataKey, data)) {
+                  realLeaser.removeDependent(deletedPath, dependency);
+                }
+              }
+              for (const addedKey in addedKeys) {
+                const addedPath = actualPath.concat(addedKey);
+                for (const dependency of actualGetDependencies(pathPrefix, dataKey, data)) {
+                  realLeaser.addDependent(addedPath, dependency);
+                }
+              }
+
               // Bubble up.
               const action = {
                 fieldName: (dataKey as keyof typeof data),
                 data: updatedItem
               };
               console.log("Dispatching with:", action);
-              const newState = bubble(actualData, action);
+              const newState = bubble(actualData, action) as T;
               realUpdater(newState);
-            }
+            },
           };
           return (
             <DataManagerContext.Provider value={providerContent}>
@@ -110,6 +252,7 @@ export const DataManager = typedMemo(DataManagerInternal);
  * This is a provider target for DataManager.
  * All direct children of DataManager need to be duck-typed to include
  * the dataKey field. 
+ * 
  */
 export const DataNode = React.memo((
   {dataKey, children} :
@@ -125,8 +268,10 @@ export function useDataManager<T>() : DataManagerType<T | undefined> {
   if (typeof dataManager === "undefined") {
     console.log("Datamanager used without parent!");
     return {
+      dataLeaser: undefined,
+      pathPrefix: [],
       data: undefined,
-      updateData: () => {}
+      updateData: () => {},
     };
   }
   return dataManager as DataManagerType<T | undefined>;

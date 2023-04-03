@@ -103,12 +103,37 @@ const DialogueNodeEditor = (
   const {
     data: nodeLibrary,
   } = useDataManager<DialogueNodeLibrary>();
+
+  const getDependencies = useCallback((prefix: string[], key: string, node: DialogueNode) => {
+    let deps : string[][] = [];
+    // Siblings.
+    for (const sibling of Object.values(node.next)) {
+      deps.push(
+        prefix.concat(sibling)
+      );
+    }
+    // Dialogue Entries.
+    deps.push(
+      ["dialogueEntryLibrary", node.dialogueEntryId]
+    );
+
+    // Locations.
+    if (typeof node.locationId !== "undefined") {
+      deps.push(
+        ["locationLibrary", node.locationId]
+      )
+    }
+
+    return deps;
+
+  }, [nodeLibrary]);
+
   const node = $get(nodeLibrary, id);
   const entry = $get(dialogueEntryLibrary, node?.dialogueEntryId);
   const speaker = entry?.speakerId;
   const text = entry?.textMarkdown;
   return (
-   <DataManager>
+   <DataManager getDependencies={getDependencies}>
       <DataNode key={id} dataKey={id}>
         <DataManager>
           <DataNode key="dialogueEntryId" dataKey="dialogueEntryId">
@@ -306,6 +331,8 @@ const DialogueNodeCreator = (
     </Button>
   </Stack>;
 }
+
+
 
 /**
  * It's a little weird, but to add extra functionality as a sibling to the actual react flow,
@@ -533,6 +560,25 @@ const DialogueNodeArranger = (
   </Grid>;
 };
 
+const validateConversationDependencies = (
+  configuration: GameConfiguration,
+  entity: Conversation
+) => {
+  for (const characterId of entity.characterIds) {
+    if (!(characterId in configuration.characterLibrary)) {
+      return false;
+    }
+  }
+  for (const dialogueNode of Object.values(entity.dialogueNodeLibrary)) {
+    for (const nextDialogueId of Object.values(dialogueNode.next)) {
+      if (!(nextDialogueId in entity.dialogueNodeLibrary)) {
+        return false;
+      }
+    }
+  }
+  return entity.initialDialogueNodeId in entity.dialogueNodeLibrary;
+};
+
 const ConversationCard = () => {
   const {
     gameConfiguration : {
@@ -583,25 +629,6 @@ const ConversationCard = () => {
       </CardContent>
     </Card>
   );
-};
-
-const validateDataDependencies = (
-  configuration: GameConfiguration,
-  entity: Conversation
-) => {
-  for (const characterId of entity.characterIds) {
-    if (!(characterId in configuration.characterLibrary)) {
-      return false;
-    }
-  }
-  for (const dialogueNode of Object.values(entity.dialogueNodeLibrary)) {
-    for (const nextDialogueId of Object.values(dialogueNode.next)) {
-      if (!(nextDialogueId in entity.dialogueNodeLibrary)) {
-        return false;
-      }
-    }
-  }
-  return entity.initialDialogueNodeId in entity.dialogueNodeLibrary;
 };
 
 export default function ConversationEditor() {

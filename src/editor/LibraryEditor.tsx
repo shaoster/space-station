@@ -174,9 +174,7 @@ export const LibrarySelector = (
     data,
     updateData
   } = useDataManager();
-
   const realValue = fieldValue ?? data;
-  
   const renderInput = (params: JSX.IntrinsicAttributes & TextFieldProps) => <TextField {...params} label={fieldLabel} margin="normal" />;
   // Special case handling for "foreign keys".
   const options = Object.keys(fieldLibrary);

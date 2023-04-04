@@ -198,14 +198,39 @@ export type DependencyFinder = (path: PathComponent[], value: any) => PathCompon
  * to deal with relative paths, which is useful for the dialogueNode stuff.
  **/
 export const DATA_DEPENDENCIES : {[key: string]: DependencyFinder}= {
+  /// Characters
+  "$.characterLibrary.*.imageIds.*":
+    (_p, v) => (["imageLibrary" as PathComponent]).concat([v]),
+  "$.characterLibrary.*.raceId":
+    (_p, v) => (["raceLibrary" as PathComponent]).concat([v]),
+
+  /// Races
+  "$.raceLibrary.*.imageId":
+    (_p, v) => (["imageLibrary" as PathComponent]).concat([v]),
+  "$.raceLibrary.*.itemAffinities.*":
+    (_p, v) => (["itemLibrary" as PathComponent]).concat([v]),
+
+  /// Conversations (Interaction Trees)
   "$.conversationLibrary.*.characterIds.*":
-    (p, v) => (["characterLibrary" as PathComponent].concat([v])),
+    (_p, v) => (["characterLibrary" as PathComponent].concat([v])),
   "$.conversationLibrary.*.locationId": 
-    (p, v) => (["locationLibrary" as PathComponent].concat([v])),
+    (_p, v) => (["locationLibrary" as PathComponent].concat([v])),
   "$.conversationLibrary.*.initialDialogueNodeId":
     (p, v) => (p.slice(0, -1).concat(["dialogueNodeLibrary"]).concat([v])),
   "$.conversationLibrary.*.dialogueNodeLibrary.*.next.*":
     (p, v) => (p.slice(0, -3).concat([v])),
+
+  /// Dialogue Entries (Dialogue Copy)
+  "$.dialogueEntryLibrary.*.speakerId":
+    (_p, v) => (["characterLibrary" as PathComponent]).concat([v]),
+
+  /// Items
+  "$.itemLibrary.*.imageId":
+    (_p, v) => (["imageLibrary" as PathComponent]).concat([v]),
+
+  /// Schedule
+  "$.initialEventSchedule.*.*":
+    (_p, v) => (["conversationLibrary" as PathComponent].concat([v])),
 };
 
 
@@ -257,7 +282,9 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
   raceLibrary: {
     human: {
       raceName: "The Coalition of Human Races",
-      imageId: "jane/portrait" // You are the avatar of humanity!
+      imageId: "jane/portrait",// You are the avatar of humanity!
+      // I guess humanity is neutral by default?
+      itemAffinities: {}
     }
   },
   conversationLibrary: {

@@ -1,4 +1,5 @@
 import { ImageId } from "./Images";
+import { ItemId } from "./Items";
 
 /**
  * A Race object defines a set of characteristics common to members of a race.
@@ -15,6 +16,16 @@ export interface Race {
      */
     imageId: ImageId;
 
+
+    /**
+     * Sparse adjacency matrix of a race's affinity for certain items.
+     * Missing entries should be treated as default or neutral.
+     * Positive numbers are good, negative numbers are bad.
+     */
+
+    itemAffinities: {
+        [key: ItemId]: number
+    };
 }
 
 /**

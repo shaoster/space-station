@@ -49,4 +49,6 @@
 
 .react-flow__node-default.selected {
   font-weight: bolder;
+  font-style: italic;
+  text-shadow: #FC0 1px 0 10px;
 }

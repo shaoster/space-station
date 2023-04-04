@@ -2,10 +2,10 @@
  * This module is meant to hide the side-effecting warts.
  * @packageDocumentation
  */
-import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
-import { HashRouter, matchPath, Route, Routes, useLocation, useParams, useResolvedPath } from "react-router-dom";
+import React, { ReactElement, ReactNode, useContext, useEffect, useState } from "react";
+import { HashRouter, Route, Routes, matchPath, useLocation, useParams, useResolvedPath } from "react-router-dom";
 import useLocalStorage from "use-local-storage";
-import { DATA_DEPENDENCIES, DependencyFinder, GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
+import { DATA_DEPENDENCIES, GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
 
 import jp, { PathComponent } from 'jsonpath';
 
@@ -46,10 +46,6 @@ export type DataManagerType<T = unknown> = {
   pathPrefix: string[],
   data: T,
   updateData: (data: T) => void,
-  /**
-   * Child object for managing referential integrity.
-   */
-  dataLeaser?: DataLeaser,
 };
 
 export type UpdateAction<T, U extends {[key: string] : any}> = {
@@ -81,8 +77,8 @@ const getLeaser = (permits: PermitsType, setPermits: (permits: PermitsType) => v
   return {
     addDependent: function(dependent, dependency): void {
       // First deal with the inbound side.
-      const dependentPath = dependent.join(".");
-      const dependencyPath = dependency.join(".");
+      const dependentPath = jp.stringify(dependent);
+      const dependencyPath = jp.stringify(dependency);
       if (dependencyPath in permits) {
         setPermits({
           ...permits,
@@ -101,8 +97,8 @@ const getLeaser = (permits: PermitsType, setPermits: (permits: PermitsType) => v
       }
     },
     removeDependent: function(dependent, dependency): void {
-      const dependentPath = dependent.join(".");
-      const dependencyPath = dependency.join(".");
+      const dependentPath = jp.stringify(dependent);
+      const dependencyPath = jp.stringify(dependency);
       if (!(dependencyPath in permits)) {
         throw new Error(`There is no dependency on ${dependencyPath} to remove.`);
       }
@@ -147,7 +143,7 @@ function getInitialPermits(gameConfiguration: GameConfiguration) {
     const entries = jp.nodes(gameConfiguration, pathExp);
     for (const {path, value} of entries) {
         const dep = dl(path, value);
-        leaser.addDependent(dep, path);
+        leaser.addDependent(path, dep);
     }
   }
   console.log("Permits:", permits);
@@ -155,16 +151,14 @@ function getInitialPermits(gameConfiguration: GameConfiguration) {
 }
 
 const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
-  {data, updateData, getDependencies, children}: 
+  {data, updateData, children}: 
   {
     data?: T,
     updateData?: (data: T) => void,
-    getDependencies?: DependencyFinder,
     children: ReactNode
   }
 ) => {
   const {
-    dataLeaser: contextLeaser,
     pathPrefix: contextPath,
     data: contextData,
     updateData: contextUpdater,
@@ -196,6 +190,9 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
             data,
             pathPrefix,
             updateData: function(updatedItem: any) {
+              // TODO: Consider implementing incremental referential integrity
+              // checking here.
+              /*
               // The key idea for referential integrity here is that
               // we might be on the inbound side or outbound side of
               // a data dependency, and we might be both.
@@ -211,7 +208,6 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
               );
               for (const deletedKey in deletedKeys) {
                 const deletedPath = actualPath.concat(deletedKey);
-                /*
                 const maybeDependents = realLeaser.getDependents(deletedPath);
                 if (maybeDependents.length !== 0) {
                   // Reject invalid deletions.
@@ -221,16 +217,14 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
                 for (const dependency of actualGetDependencies(pathPrefix, dataKey, data)) {
                   realLeaser.removeDependent(deletedPath, dependency);
                 }
-                */
               }
               for (const addedKey in addedKeys) {
                 const addedPath = actualPath.concat(addedKey);
-                /*
                 for (const dependency of actualGetDependencies(pathPrefix, dataKey, data)) {
                   //realLeaser.addDependent(addedPath, dependency);
                 }
-                */
               }
+              */
 
               // Bubble up.
               const action = {
@@ -280,7 +274,6 @@ export function useDataManager<T>() : DataManagerType<T | undefined> {
   if (typeof dataManager === "undefined") {
     console.log("Datamanager used without parent!");
     return {
-      dataLeaser: undefined,
       pathPrefix: [],
       data: undefined,
       updateData: () => {
@@ -301,6 +294,17 @@ export type GameConfigurationManager = {
 
 const GameConfigurationContext = React.createContext<GameConfigurationManager | undefined>(undefined);
 
+export class ReferentialIntegrityError extends Error {
+  dependency: string;
+  dependents: string[];
+  
+  constructor(dependency: string, dependents: string[])  {
+    super(`Key ${dependency} cannot be removed because it is depended on by: ${dependents}`);
+    this.dependency = dependency;
+    this.dependents = dependents;
+  }
+}
+
 export const GameConfigurationProvider = ({profileName, children} : {profileName: string | undefined, children: ReactNode}) => {
   console.log("Loading profile from:", profileName)
   const [savedConfiguration, saveCurrentConfiguration] = useLocalStorage<GameConfiguration | undefined>(
@@ -308,10 +312,19 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
     undefined
   );
   const [workingConfiguration, updateWorkingConfiguration] = useState(savedConfiguration || newGameConfiguration());
-  // All of this lease management stuff is only relevant in the root.
-  // You must leave your name to get a permit, and it's your responsibility as
-  // the dependent to make sure you don't have duplicate permits.
-  const initialPermits = getInitialPermits(workingConfiguration);
+  // As the quick and dirty solution for correctness, let's just recompute referential integrity on each update.
+  // TODO: Incrementally update.
+  const permits = getInitialPermits(workingConfiguration);
+  const referenceSafeUpdateWorkingConfiguration = (gameConfig: GameConfiguration) => {
+    for (const [dependency, dependents] of Object.entries(permits)) {
+      // Every key must exist.
+      const nodes = jp.nodes(gameConfig, dependency);
+      if (nodes.length === 0) {
+        throw new ReferentialIntegrityError(dependency, Object.keys(dependents));
+      }
+    }
+    updateWorkingConfiguration(gameConfig);
+  }; 
 
   // If we don't have anything saved for the current profile, save what we have now.
   if (!savedConfiguration) {
@@ -323,7 +336,7 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
   }, [workingConfiguration, saveCurrentConfiguration]);
   return <GameConfigurationContext.Provider value={{
     gameConfiguration: workingConfiguration,
-    updateGameConfiguration: updateWorkingConfiguration
+    updateGameConfiguration: referenceSafeUpdateWorkingConfiguration
   }}>
     {children}
   </GameConfigurationContext.Provider>;

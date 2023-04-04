@@ -52,3 +52,8 @@
   font-style: italic;
   text-shadow: #FC0 1px 0 10px;
 }
+
+.MuiBadge-anchorOriginTopLeft {
+  margin-left: 84px;
+  text-align: left;
+}

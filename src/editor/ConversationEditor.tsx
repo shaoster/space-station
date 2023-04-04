@@ -3,7 +3,7 @@ import { Alert, Box, Button, Card, CardContent, Chip, Divider, Grid, IconButton,
 import React, { useCallback, useEffect, useState } from "react";
 import { Connection, Edge, MarkerType, Node, ReactFlow, ReactFlowProvider, updateEdge, useEdgesState, useNodesState, useOnSelectionChange } from "reactflow";
 import 'reactflow/dist/style.css';
-import { EXAMPLE_CONVERSATION, GameConfiguration } from "../glossary/Compendium";
+import { EXAMPLE_CONVERSATION } from "../glossary/Compendium";
 import { Conversation, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
 import { BoundCheckbox, LibraryEditor, LibrarySelector } from "./LibraryEditor";
 import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
@@ -86,7 +86,9 @@ function getGraphFromData(nodeLibrary: DialogueNodeLibrary, root: DialogueNodeId
 /**
  * Stupid shorthand for maybe-undefined chained property access.
  */
-function $get<T>(obj?: T, key?: keyof T){
+function $get<T extends undefined | {
+  [key: (string | number | symbol)]: any
+}>(obj?: T, key?: keyof T){
   return (typeof key === "undefined") ? undefined :
     (typeof obj === "undefined" ? undefined : obj[key]);
 }
@@ -116,7 +118,7 @@ const DialogueNodeEditor = (
       ...remaining
       //...nodeLibrary
     });
-  }, [nodeLibrary, updateNodeLibrary, id]);
+  }, [nodeLibrary, updateNodeLibrary, id, clearId]);
 
   const node = $get(nodeLibrary, id);
   const entry = $get(dialogueEntryLibrary, node?.dialogueEntryId);
@@ -554,25 +556,6 @@ const DialogueNodeArranger = (
       </ReactFlow>
     </Grid>
   </Grid>;
-};
-
-const validateConversationDependencies = (
-  configuration: GameConfiguration,
-  entity: Conversation
-) => {
-  for (const characterId of entity.characterIds) {
-    if (!(characterId in configuration.characterLibrary)) {
-      return false;
-    }
-  }
-  for (const dialogueNode of Object.values(entity.dialogueNodeLibrary)) {
-    for (const nextDialogueId of Object.values(dialogueNode.next)) {
-      if (!(nextDialogueId in entity.dialogueNodeLibrary)) {
-        return false;
-      }
-    }
-  }
-  return entity.initialDialogueNodeId in entity.dialogueNodeLibrary;
 };
 
 const ConversationCard = () => {

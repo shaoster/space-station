@@ -14,7 +14,7 @@ import { EventSchedule } from "./Events";
 import { Image, ImageId, ImageLibrary } from "./Images";
 import { Item, ItemId, ItemLibrary } from "./Items";
 import { Location, LocationId, LocationLibrary } from "./Locations";
-import { RaceLibrary } from "./Races";
+import { Race, RaceId, RaceLibrary } from "./Races";
 import { ResourceBundle } from "./Resources";
 
 // Grouping these types this way is a bit heavy-handed, but I'm doing it here to prevent typos where
@@ -24,13 +24,13 @@ import { ResourceBundle } from "./Resources";
 // bumping up against each other in actual code.
 
 /** @private */
-export type IdentifiableEntity = Character | Conversation | DialogueNode | DialogueEntry | Image | Item | Location;
+export type IdentifiableEntity = Character | Conversation | DialogueNode | DialogueEntry | Image | Item | Location | Race;
 
 /** @private */
-export type EntityId = CharacterId | ConversationId | DialogueNodeId | DialogueEntryId | ImageId | ItemId | LocationId;
+export type EntityId = CharacterId | ConversationId | DialogueNodeId | DialogueEntryId | ImageId | ItemId | LocationId | RaceId;
 
 /** @private */
-export type EntityLibrary = CharacterLibrary | ConversationLibrary | DialogueNodeLibrary | DialogueEntryLibrary | ImageLibrary | ItemLibrary | LocationLibrary;
+export type EntityLibrary = CharacterLibrary | ConversationLibrary | DialogueNodeLibrary | DialogueEntryLibrary | ImageLibrary | ItemLibrary | LocationLibrary | RaceLibrary;
 
 /**
  * 
@@ -233,6 +233,15 @@ export const DATA_DEPENDENCIES : {[key: string]: DependencyFinder}= {
     (_p, v) => (["conversationLibrary" as PathComponent].concat([v])),
 };
 
+export const EXAMPLE_CHARACTER : Character = {
+  name: "Jane Doe",
+  title: "The Proctor",
+  role: CharacterRole.MainCharacter,
+  imageIds: {
+    [CharacterMood.Neutral]: "jane/portrait" 
+  },
+  raceId: "human"
+};
 
 // A test example for now.
 export const EXAMPLE_CONVERSATION : Conversation = {
@@ -260,15 +269,7 @@ export const EXAMPLE_CONVERSATION : Conversation = {
  */
 const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
   characterLibrary: {
-    jane: {
-      name: "Jane Doe",
-      title: "The Proctor",
-      role: CharacterRole.MainCharacter,
-      imageIds: {
-        [CharacterMood.Neutral]: "jane/portrait" 
-      },
-      raceId: "human"
-    },
+    jane: EXAMPLE_CHARACTER,
     baz: {
       name: "Baz Buzz",
       title: "Boozelfop",
@@ -299,13 +300,21 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
     }
   },
   imageLibrary: {
+    "tbd": {
+      alt: "Don't push this to prod.",
+      /* TODO: Re-host placeholders. */
+      /* https://www.svgrepo.com/svg/51211/question-mark */
+      url: "https://www.svgrepo.com/show/51211/question-mark.svg",
+    },
     "jane/portrait": {
       alt: "Your face.",
-      url: "404.png",
+      /* https://www.svgrepo.com/svg/169450/smiley-face */
+      url: "https://www.svgrepo.com/show/169450/smiley-face.svg",
     },
     "jane/home": {
       alt: "Your flat.",
-      url: "404.png",
+      /* https://www.svgrepo.com/svg/513635/house */
+      url: "https://www.svgrepo.com/show/513635/house.svg",
     }
   },
   itemLibrary: {},

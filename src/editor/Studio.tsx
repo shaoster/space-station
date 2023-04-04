@@ -1,3 +1,4 @@
+import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Box, IconButton, Modal, Tab, Tabs } from "@mui/material";
 import { useEffect, useState } from "react";
 import { ErrorBoundary, } from "react-error-boundary";
@@ -5,8 +6,8 @@ import { Link, Route, Routes } from "react-router-dom";
 import { GameConfiguration } from "../glossary/Compendium";
 import ConversationEditor from "./ConversationEditor";
 import SummaryViewer from "./SummaryViewer";
-import { DataManager, DataNode, ReferentialIntegrityError, RouteMap, useGameConfiguration, useRelativeRouteMatch } from "./Util";
-import CloseIcon from '@mui/icons-material/Close';
+import { DataManager, DataNode, RouteMap, useGameConfiguration, useRelativeRouteMatch } from "./Util";
+import CharacterEditor from './CharacterEditor';
 
 function ResetError(
   {resetErrorBoundary}:
@@ -49,6 +50,12 @@ export default function Studio() {
       label: "Summary",
       component: SummaryViewer
     },
+    "characters/*": {
+      label: "Characters",
+      component: CharacterEditor,
+      propertyKey: "characterLibrary",
+      defaultTo: "characters",
+    },
     "conversations/*": {
       label: "Conversations",
       component: ConversationEditor,
@@ -56,7 +63,7 @@ export default function Studio() {
       defaultTo: "conversations",
     },
   };
-  const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap);
+  const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap) ?? null;
   const {
     gameConfiguration,
     updateGameConfiguration

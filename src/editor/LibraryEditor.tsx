@@ -168,9 +168,6 @@ export const LibrarySelector = (
   }
 ) => {
   const {
-    gameConfiguration,
-  } = useGameConfiguration();
-  const {
     data,
     updateData
   } = useDataManager();
@@ -184,7 +181,7 @@ export const LibrarySelector = (
       options={options}
       renderInput={renderInput}
       multiple={multiple}
-      onChange={(evt, value) => {updateData(value)}}
+      onChange={(_evt, value) => {updateData(value)}}
       fullWidth
     />
   );
@@ -277,6 +274,22 @@ export class LibraryEditorBuilder {
   }
 }
 
+export const BoundTextField = (
+  {label}  : {label?: string}
+) => {
+  const {
+    data: fieldValue,
+    updateData: updateFieldValue
+  } = useDataManager<string>();
+  return (
+    <TextField
+      value={fieldValue}
+      label={label}
+      onChange={(evt) => updateFieldValue(evt.target.value)}
+    />
+  );
+}
+
 export const BoundCheckbox = (
   {label}  : {label?: string}
 ) => {
@@ -312,6 +325,7 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
       }];
     })
   );
+
   const currentTab = useRelativeRouteMatch<U>(routeMap);
   const handleCreate = useCallback(() => {
     let i = 0;

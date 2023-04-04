@@ -11,7 +11,10 @@ export interface Image {
   /** Caption/subtext available for the image. */
   alt: string;
   /** The url for the image, eventually. */
-  url: string;  
+  url: string;
+
+  /** Optional category to make it easier to select elsewhere in the editor. */
+  category?: string;
 }
 
 /**

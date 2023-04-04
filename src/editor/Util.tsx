@@ -62,6 +62,15 @@ function bubble<T extends {[key: string | number | symbol] : any}>(
   state: T, action: UpdateAction<any, T>
 ) : T {
   console.log("Bubble called with ", action);
+  if (typeof action.data === "undefined") {
+    // This is a child-signalled deletion. We shouldn't allow any undefs in the
+    // actual data struct.
+    const {
+      [action.fieldName]: removed,
+      ...remaining
+    } = state;
+    return remaining as T;
+  }
   return {
     ...state,
     [action.fieldName]: action.data

@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/space-station/static/css/main.689f54da.css",
-    "main.js": "/space-station/static/js/main.edd5221a.js",
+    "main.css": "/space-station/static/css/main.f30149a3.css",
+    "main.js": "/space-station/static/js/main.547ef44b.js",
     "index.html": "/space-station/index.html",
-    "main.689f54da.css.map": "/space-station/static/css/main.689f54da.css.map",
-    "main.edd5221a.js.map": "/space-station/static/js/main.edd5221a.js.map"
+    "main.f30149a3.css.map": "/space-station/static/css/main.f30149a3.css.map",
+    "main.547ef44b.js.map": "/space-station/static/js/main.547ef44b.js.map"
   },
   "entrypoints": [
-    "static/css/main.689f54da.css",
-    "static/js/main.edd5221a.js"
+    "static/css/main.f30149a3.css",
+    "static/js/main.547ef44b.js"
   ]
 }

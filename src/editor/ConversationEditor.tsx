@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Connection, Edge, MarkerType, Node, ReactFlow, ReactFlowProvider, updateEdge, useEdgesState, useNodesState, useOnSelectionChange } from "reactflow";
 import 'reactflow/dist/style.css';
 import { EXAMPLE_CONVERSATION, GameConfiguration } from "../glossary/Compendium";
-import { Conversation, ConversationLibrary, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
+import { Conversation, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary, getDialogueNodeDependencies } from "../glossary/Conversations";
 import { BoundCheckbox, LibraryEditor, LibrarySelector } from "./LibraryEditor";
 import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
 
@@ -92,7 +92,8 @@ function $get<T>(obj?: T, key?: keyof T){
 }
 
 const DialogueNodeEditor = (
-  {id} : {id: DialogueNodeId}
+  {id, clearId} :
+  {id: DialogueNodeId, clearId: () => void}
 ) => {
   const {
     gameConfiguration: {
@@ -102,38 +103,27 @@ const DialogueNodeEditor = (
   } = useGameConfiguration();
   const {
     data: nodeLibrary,
+    updateData: updateNodeLibrary,
   } = useDataManager<DialogueNodeLibrary>();
 
-  const getDependencies = useCallback((prefix: string[], key: string, node: DialogueNode) => {
-    let deps : string[][] = [];
-    // Siblings.
-    for (const sibling of Object.values(node.next)) {
-      deps.push(
-        prefix.concat(sibling)
-      );
-    }
-    // Dialogue Entries.
-    deps.push(
-      ["dialogueEntryLibrary", node.dialogueEntryId]
-    );
-
-    // Locations.
-    if (typeof node.locationId !== "undefined") {
-      deps.push(
-        ["locationLibrary", node.locationId]
-      )
-    }
-
-    return deps;
-
-  }, [nodeLibrary]);
+  const handleDelete = useCallback(() => {
+    const {
+      [id]: remove,
+      ...remaining
+    } = nodeLibrary as DialogueNodeLibrary;
+    clearId();
+    updateNodeLibrary({
+      ...remaining
+      //...nodeLibrary
+    });
+  }, [nodeLibrary, updateNodeLibrary, id]);
 
   const node = $get(nodeLibrary, id);
   const entry = $get(dialogueEntryLibrary, node?.dialogueEntryId);
   const speaker = entry?.speakerId;
   const text = entry?.textMarkdown;
   return (
-   <DataManager getDependencies={getDependencies}>
+   <DataManager getDependencies={getDialogueNodeDependencies}>
       <DataNode key={id} dataKey={id}>
         <DataManager>
           <DataNode key="dialogueEntryId" dataKey="dialogueEntryId">
@@ -174,6 +164,10 @@ const DialogueNodeEditor = (
             <BoundCheckbox label="Triggers Game Over?"/>
           </DataNode>
         </DataManager>
+        <br/>
+        <Button onClick={handleDelete} variant="contained">
+          Delete
+        </Button>
       </DataNode>
     </DataManager>
   );
@@ -331,7 +325,6 @@ const DialogueNodeCreator = (
     </Button>
   </Stack>;
 }
-
 
 
 /**
@@ -525,7 +518,10 @@ const DialogueNodeArranger = (
           // These 3 branches are mutually exclusive, which is critical.
           // Otherwise, we might have multiple writers for the same data objects!
           selection?.type === SelectionType.Node &&
-          <DialogueNodeEditor id={selection.data as DialogueNodeId}/>
+          <DialogueNodeEditor
+            id={selection.data as DialogueNodeId}
+            clearId={() => setSelection(undefined)}
+          />
         }
         {
           selection?.type === SelectionType.Edge &&

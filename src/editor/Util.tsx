@@ -5,13 +5,12 @@
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { HashRouter, matchPath, Route, Routes, useLocation, useParams, useResolvedPath } from "react-router-dom";
 import useLocalStorage from "use-local-storage";
-import { EntityId, GameConfiguration, IdentifiableEntity, newGameConfiguration } from "../glossary/Compendium";
+import { DATA_DEPENDENCIES, DependencyLister, GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
 
 /**
  * idk about this dependency, but I'd rather not waste time maintaining things
  * like object/array equality.
  */
-import _ from 'lodash';
 
 const SCRATCH_PROFILE = "__DEFAULT__";
 
@@ -70,13 +69,24 @@ function bubble<T extends {[key: string | number | symbol] : any}>(
   } as T
 };
 
-export type DependencyLister<T> = (prefix: string[], key: string, entity: T) => string[][];
+
 
 /**
  * Models inbound dependencies on a particularly entity as a nested dictionary.
  * The key operations of add/remove/check should all be O(1).
  */
 export type PermitsType = {[key: string] : {[key: string] : undefined}};
+
+function buildInitialDataDependencies(gameConfiguration: GameConfiguration) {
+  const permits : PermitsType = {};
+  for (const [key, lib] of Object.entries(gameConfiguration)) {
+    if (!(key in DATA_DEPENDENCIES)) {
+      continue;
+    }
+    const listDeps : DependencyLister<typeof lib> = DATA_DEPENDENCIES[key as keyof typeof DATA_DEPENDENCIES];
+
+  }
+}
 
 const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
   {data, updateData, getDependencies, children}: 
@@ -96,7 +106,8 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
   const actualData = (data ?? contextData) as T | undefined;
   const actualPath = contextPath ?? [];
   if (typeof actualData === "undefined") {
-    throw new Error("DataManager must have data at its root, at the very least.");
+    throw new Error("DataManager must have data at its root, at the very least. Found at: "
+    + contextPath.join("."));
   }
 
   const actualGetDependencies = useCallback((p: string[], k: string, v: T) => {
@@ -110,6 +121,9 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
   // You must leave your name to get a permit, and it's your responsibility as
   // the dependent to make sure you don't have duplicate permits.
   const [permits, setPermits] = useState<PermitsType>({});
+  if (Object.keys(permits).length > 0) {
+    console.log("Permits:", permits);
+  }
   const leaser = contextLeaser ?? {
     addDependent: function(dependent, dependency): void {
       // First deal with the inbound side.
@@ -194,12 +208,12 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
               // a data dependency, and we might be both.
               // If we're outbound, we only need to reject invalid deletions.
               // If we're inbound, we need to add or remove edges.
-              const originalKeys = new Set(Object.keys(actualData));
+              const originalKeys = new Set(Object.keys(data));
               const updatedKeys = new Set(Object.keys(updatedItem));
               const addedKeys = Object.keys(updatedItem).filter(
                 (k) => !originalKeys.has(k)
               );
-              const deletedKeys = Object.keys(originalKeys).filter(
+              const deletedKeys = Object.keys(data).filter(
                 (k) => !updatedKeys.has(k)
               );
               for (const deletedKey in deletedKeys) {
@@ -230,6 +244,7 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
               const newState = bubble(actualData, action) as T;
               realUpdater(newState);
             },
+            leaser: realLeaser
           };
           return (
             <DataManagerContext.Provider value={providerContent}>
@@ -271,7 +286,9 @@ export function useDataManager<T>() : DataManagerType<T | undefined> {
       dataLeaser: undefined,
       pathPrefix: [],
       data: undefined,
-      updateData: () => {},
+      updateData: () => {
+        throw new Error("No data updater bound!");
+      },
     };
   }
   return dataManager as DataManagerType<T | undefined>;

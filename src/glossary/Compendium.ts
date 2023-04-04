@@ -8,7 +8,7 @@
  **/
 
 import { Character, CharacterId, CharacterLibrary, CharacterMood, CharacterRole } from "./Characters";
-import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "./Conversations";
+import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary, DialogueNode, DialogueNodeId, DialogueNodeLibrary, getConversationDependencies } from "./Conversations";
 import { EventSchedule } from "./Events";
 import { Image, ImageId, ImageLibrary } from "./Images";
 import { Item, ItemId, ItemLibrary } from "./Items";
@@ -187,6 +187,13 @@ export interface GameConfiguration {
    **/
   initialResources: ResourceBundle;
 }
+
+
+export type DependencyLister<T> = (prefix: string[], key: string, entity: T) => string[][];
+
+export const DATA_DEPENDENCIES = {
+  conversationLibrary: getConversationDependencies,
+};
 
 
 // A test example for now.

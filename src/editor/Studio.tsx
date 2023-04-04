@@ -23,6 +23,7 @@ export default function Studio() {
   const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap);
   const {
     gameConfiguration,
+    updateGameConfiguration
   } = useGameConfiguration();
   
   return <>
@@ -48,7 +49,7 @@ export default function Studio() {
         Object.entries(routeMap).map(([route, le]) => {
           if (le.component) {
             const MaybeComponent = le?.component as React.FunctionComponent;
-            const dataNodeComponent = <DataManager key={le.label} data={gameConfiguration}>
+            const dataNodeComponent = <DataManager key={le.label} data={gameConfiguration} updateData={updateGameConfiguration}>
               <DataNode dataKey={le.propertyKey}>
                 <MaybeComponent/>
               </DataNode>

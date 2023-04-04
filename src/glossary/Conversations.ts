@@ -5,6 +5,7 @@
  */
 
 import { CharacterId } from "./Characters";
+import { DependencyLister } from "./Compendium";
 import { ImageId } from "./Images";
 import { LocationId } from "./Locations";
 import { ResourceBundle } from "./Resources";
@@ -105,6 +106,53 @@ export interface DialogueNode {
     y: number
   }
 }
+
+
+export const getDialogueNodeDependencies : DependencyLister<DialogueNode> = (prefix: string[], key: string, node: DialogueNode) => {
+  let deps : string[][] = [];
+  // Siblings.
+  for (const sibling of Object.values(node.next)) {
+    deps.push(
+      prefix.concat(sibling)
+    );
+  }
+  // Dialogue Entries.
+  deps.push(
+    ["dialogueEntryLibrary", node.dialogueEntryId]
+  );
+
+  // Locations.
+  if (typeof node.locationId !== "undefined") {
+    deps.push(
+      ["locationLibrary", node.locationId]
+    )
+  }
+  console.log("Dependencies:", deps);
+  return deps;
+};
+
+
+export const getConversationDependencies : DependencyLister<Conversation> = (prefix: string[], key: string, conversation: Conversation) => {
+  let deps : string[][] = [];
+  for (const characterId of conversation.characterIds) {
+    deps.push(
+      ["characterLibrary", characterId]
+    );
+  }
+  deps.push(
+    prefix.concat(key).concat(["dialogueNodeLibrary", conversation.initialDialogueNodeId])
+  )
+  deps.push(
+    ["locationLibrary", conversation.locationId]
+  )
+  let nodeDeps : string[][] = [];
+  for (const [id, node] of Object.entries(conversation.dialogueNodeLibrary)) {
+    nodeDeps = nodeDeps.concat(getDialogueNodeDependencies(
+      prefix.concat([key, "dialogueNodeLibrary"]), id, node
+    ));
+  }
+  return deps.concat(nodeDeps);
+};
 
 export type DialogueNodeId = string;
 export type DialogueNodeLibrary = { [key: DialogueNodeId]: DialogueNode };

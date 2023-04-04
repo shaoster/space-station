@@ -8,6 +8,7 @@ import useLocalStorage from "use-local-storage";
 import { DATA_DEPENDENCIES, GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
 
 import jp, { PathComponent } from 'jsonpath';
+import { useErrorBoundary } from "react-error-boundary";
 
 /**
  * idk about this dependency, but I'd rather not waste time maintaining things
@@ -158,6 +159,7 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
     children: ReactNode
   }
 ) => {
+  const { showBoundary } = useErrorBoundary();
   const {
     pathPrefix: contextPath,
     data: contextData,
@@ -233,7 +235,13 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
               };
               console.log("Dispatching with:", action);
               const newState = bubble(actualData, action) as T;
-              realUpdater(newState);
+              try {
+                realUpdater(newState);
+              } catch (e) {
+                // Make data update errors into rendering errors so we can use
+                // error boundaries.
+                showBoundary(e);
+              }
             },
             leaser: undefined, 
           };

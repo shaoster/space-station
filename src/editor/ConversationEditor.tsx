@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Connection, Edge, MarkerType, Node, ReactFlow, ReactFlowProvider, updateEdge, useEdgesState, useNodesState, useOnSelectionChange } from "reactflow";
 import 'reactflow/dist/style.css';
 import { EXAMPLE_CONVERSATION, GameConfiguration } from "../glossary/Compendium";
-import { Conversation, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary, getDialogueNodeDependencies } from "../glossary/Conversations";
+import { Conversation, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
 import { BoundCheckbox, LibraryEditor, LibrarySelector } from "./LibraryEditor";
 import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
 
@@ -123,7 +123,7 @@ const DialogueNodeEditor = (
   const speaker = entry?.speakerId;
   const text = entry?.textMarkdown;
   return (
-   <DataManager getDependencies={getDialogueNodeDependencies}>
+   <DataManager>
       <DataNode key={id} dataKey={id}>
         <DataManager>
           <DataNode key="dialogueEntryId" dataKey="dialogueEntryId">

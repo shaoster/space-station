@@ -5,7 +5,6 @@
  */
 
 import { CharacterId } from "./Characters";
-import { DependencyLister } from "./Compendium";
 import { ImageId } from "./Images";
 import { LocationId } from "./Locations";
 import { ResourceBundle } from "./Resources";
@@ -107,7 +106,7 @@ export interface DialogueNode {
   }
 }
 
-
+/*
 export const getDialogueNodeDependencies : DependencyLister<DialogueNode> = (prefix: string[], key: string, node: DialogueNode) => {
   let deps : string[][] = [];
   // Siblings.
@@ -153,6 +152,7 @@ export const getConversationDependencies : DependencyLister<Conversation> = (pre
   }
   return deps.concat(nodeDeps);
 };
+*/
 
 export type DialogueNodeId = string;
 export type DialogueNodeLibrary = { [key: DialogueNodeId]: DialogueNode };

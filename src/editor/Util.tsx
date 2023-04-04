@@ -5,7 +5,9 @@
 import React, { ReactElement, ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import { HashRouter, matchPath, Route, Routes, useLocation, useParams, useResolvedPath } from "react-router-dom";
 import useLocalStorage from "use-local-storage";
-import { DATA_DEPENDENCIES, DependencyLister, GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
+import { DATA_DEPENDENCIES, DependencyFinder, GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
+
+import jp, { PathComponent } from 'jsonpath';
 
 /**
  * idk about this dependency, but I'd rather not waste time maintaining things
@@ -18,9 +20,9 @@ const SCRATCH_PROFILE = "__DEFAULT__";
  * Child interface that encapsulates dependencies between objects.
  */
 export interface DataLeaser {
-  addDependent: (dependent: string[], dependency: string[]) => void;
-  removeDependent: (dependent: string[], dependency: string[]) => void;
-  getDependents: (dependency: string[])  => string[][];
+  addDependent: (dependent: PathComponent[], dependency: PathComponent[]) => void;
+  removeDependent: (dependent: PathComponent[], dependency: PathComponent[]) => void;
+  getDependents: (dependency: PathComponent[])  => PathComponent[][];
 };
 
 /**
@@ -69,66 +71,18 @@ function bubble<T extends {[key: string | number | symbol] : any}>(
   } as T
 };
 
-
-
 /**
  * Models inbound dependencies on a particularly entity as a nested dictionary.
  * The key operations of add/remove/check should all be O(1).
  */
 export type PermitsType = {[key: string] : {[key: string] : undefined}};
 
-function buildInitialDataDependencies(gameConfiguration: GameConfiguration) {
-  const permits : PermitsType = {};
-  for (const [key, lib] of Object.entries(gameConfiguration)) {
-    if (!(key in DATA_DEPENDENCIES)) {
-      continue;
-    }
-    const listDeps : DependencyLister<typeof lib> = DATA_DEPENDENCIES[key as keyof typeof DATA_DEPENDENCIES];
-
-  }
-}
-
-const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
-  {data, updateData, getDependencies, children}: 
-  {
-    data?: T,
-    updateData?: (data: T) => void,
-    getDependencies?: DependencyLister<T>,
-    children: ReactNode
-  }
-) => {
-  const {
-    dataLeaser: contextLeaser,
-    pathPrefix: contextPath,
-    data: contextData,
-    updateData: contextUpdater,
-  } = useDataManager<T>();
-  const actualData = (data ?? contextData) as T | undefined;
-  const actualPath = contextPath ?? [];
-  if (typeof actualData === "undefined") {
-    throw new Error("DataManager must have data at its root, at the very least. Found at: "
-    + contextPath.join("."));
-  }
-
-  const actualGetDependencies = useCallback((p: string[], k: string, v: T) => {
-    if (typeof getDependencies === "undefined") {
-      return [];
-    }
-    return getDependencies(p, k, v);
-  }, [getDependencies]);
-
-  // All of this lease management stuff is only relevant in the root.
-  // You must leave your name to get a permit, and it's your responsibility as
-  // the dependent to make sure you don't have duplicate permits.
-  const [permits, setPermits] = useState<PermitsType>({});
-  if (Object.keys(permits).length > 0) {
-    console.log("Permits:", permits);
-  }
-  const leaser = contextLeaser ?? {
+const getLeaser = (permits: PermitsType, setPermits: (permits: PermitsType) => void) => {
+  return {
     addDependent: function(dependent, dependency): void {
       // First deal with the inbound side.
-      const dependentPath = JSON.stringify(dependent);
-      const dependencyPath = JSON.stringify(dependency);
+      const dependentPath = dependent.join(".");
+      const dependencyPath = dependency.join(".");
       if (dependencyPath in permits) {
         setPermits({
           ...permits,
@@ -147,8 +101,8 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
       }
     },
     removeDependent: function(dependent, dependency): void {
-      const dependentPath = JSON.stringify(dependent);
-      const dependencyPath = JSON.stringify(dependency);
+      const dependentPath = dependent.join(".");
+      const dependencyPath = dependency.join(".");
       if (!(dependencyPath in permits)) {
         throw new Error(`There is no dependency on ${dependencyPath} to remove.`);
       }
@@ -180,9 +134,48 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
         Object.keys(permits[dependencyPath]).map(p => JSON.parse(p) as string[])
         : [];
     }
-  };
+  } as DataLeaser;
+};
 
-  const realLeaser = contextLeaser ?? leaser;
+function getInitialPermits(gameConfiguration: GameConfiguration) {
+  const permits : PermitsType = {};
+  const updatePermits = (newPermits: PermitsType) => {
+    Object.assign(permits, newPermits);
+  };
+  const leaser = getLeaser(permits, updatePermits);
+  for (const [pathExp, dl] of Object.entries(DATA_DEPENDENCIES)) {
+    const entries = jp.nodes(gameConfiguration, pathExp);
+    for (const {path, value} of entries) {
+        const dep = dl(path, value);
+        leaser.addDependent(dep, path);
+    }
+  }
+  console.log("Permits:", permits);
+  return permits;
+}
+
+const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
+  {data, updateData, getDependencies, children}: 
+  {
+    data?: T,
+    updateData?: (data: T) => void,
+    getDependencies?: DependencyFinder,
+    children: ReactNode
+  }
+) => {
+  const {
+    dataLeaser: contextLeaser,
+    pathPrefix: contextPath,
+    data: contextData,
+    updateData: contextUpdater,
+  } = useDataManager<T>();
+  const actualData = (data ?? contextData) as T | undefined;
+  const actualPath = contextPath ?? [];
+  if (typeof actualData === "undefined") {
+    throw new Error("DataManager must have data at its root, at the very least. Found at: "
+    + contextPath.join("."));
+  }
+
   const realUpdater = updateData ?? contextUpdater;
   return <>
     {
@@ -218,6 +211,7 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
               );
               for (const deletedKey in deletedKeys) {
                 const deletedPath = actualPath.concat(deletedKey);
+                /*
                 const maybeDependents = realLeaser.getDependents(deletedPath);
                 if (maybeDependents.length !== 0) {
                   // Reject invalid deletions.
@@ -227,12 +221,15 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
                 for (const dependency of actualGetDependencies(pathPrefix, dataKey, data)) {
                   realLeaser.removeDependent(deletedPath, dependency);
                 }
+                */
               }
               for (const addedKey in addedKeys) {
                 const addedPath = actualPath.concat(addedKey);
+                /*
                 for (const dependency of actualGetDependencies(pathPrefix, dataKey, data)) {
-                  realLeaser.addDependent(addedPath, dependency);
+                  //realLeaser.addDependent(addedPath, dependency);
                 }
+                */
               }
 
               // Bubble up.
@@ -244,7 +241,7 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
               const newState = bubble(actualData, action) as T;
               realUpdater(newState);
             },
-            leaser: realLeaser
+            leaser: undefined, 
           };
           return (
             <DataManagerContext.Provider value={providerContent}>
@@ -311,6 +308,11 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
     undefined
   );
   const [workingConfiguration, updateWorkingConfiguration] = useState(savedConfiguration || newGameConfiguration());
+  // All of this lease management stuff is only relevant in the root.
+  // You must leave your name to get a permit, and it's your responsibility as
+  // the dependent to make sure you don't have duplicate permits.
+  const initialPermits = getInitialPermits(workingConfiguration);
+
   // If we don't have anything saved for the current profile, save what we have now.
   if (!savedConfiguration) {
     saveCurrentConfiguration(workingConfiguration);

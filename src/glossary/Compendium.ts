@@ -7,8 +7,9 @@
  * @packageDocumentation
  **/
 
+import { PathComponent } from "jsonpath";
 import { Character, CharacterId, CharacterLibrary, CharacterMood, CharacterRole } from "./Characters";
-import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary, DialogueNode, DialogueNodeId, DialogueNodeLibrary, getConversationDependencies } from "./Conversations";
+import { Conversation, ConversationId, ConversationLibrary, DialogueEntry, DialogueEntryId, DialogueEntryLibrary, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "./Conversations";
 import { EventSchedule } from "./Events";
 import { Image, ImageId, ImageLibrary } from "./Images";
 import { Item, ItemId, ItemLibrary } from "./Items";
@@ -189,10 +190,22 @@ export interface GameConfiguration {
 }
 
 
-export type DependencyLister<T> = (prefix: string[], key: string, entity: T) => string[][];
+export type DependencyFinder = (path: PathComponent[], value: any) => PathComponent[];
 
-export const DATA_DEPENDENCIES = {
-  conversationLibrary: getConversationDependencies,
+/**
+ * The keys are outbound foreign relations in JsonPath format.
+ * The values are of type DependencyFinder, instead of JsonPath to make it easier
+ * to deal with relative paths, which is useful for the dialogueNode stuff.
+ **/
+export const DATA_DEPENDENCIES : {[key: string]: DependencyFinder}= {
+  "$.conversationLibrary.*.characterIds.*":
+    (p, v) => (["characterLibrary" as PathComponent].concat([v])),
+  "$.conversationLibrary.*.locationId": 
+    (p, v) => (["locationLibrary" as PathComponent].concat([v])),
+  "$.conversationLibrary.*.initialDialogueNodeId":
+    (p, v) => (p.slice(0, -1).concat(["dialogueNodeLibrary"]).concat([v])),
+  "$.conversationLibrary.*.dialogueNodeLibrary.*.next.*":
+    (p, v) => (p.slice(0, -3).concat([v])),
 };
 
 
@@ -283,7 +296,7 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
   },
   initialEventSchedule: {},
   initialResources: {},
-}
+};
 
 export function newGameConfiguration() : GameConfiguration {
   return {

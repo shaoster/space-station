@@ -15,6 +15,7 @@
     "@types/react": "^18.0.28",
     "@types/react-dom": "^18.0.11",
     "boardgame.io": "^0.50.2",
+    "jsonpath": "^1.1.1",
     "lodash": "^4.17.21",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -54,6 +55,7 @@
     ]
   },
   "devDependencies": {
+    "@types/jsonpath": "^0.2.0",
     "@types/lodash": "^4.14.192",
     "gh-pages": "^5.0.0",
     "typedoc": "^0.23.28"

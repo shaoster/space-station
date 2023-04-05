@@ -413,7 +413,7 @@ export function useRelativeRouteMatch<T>(routeMap: RouteMap<T>) {
   }
   const strippedPath = pathname.slice(urlPrefix.length);
   // Try our best to ensure descendant ordering.
-  const patterns = Object.keys(routeMap).sort((a, b) => a.length - b.length);
+  const patterns = Object.keys(routeMap).sort((a, b) => b.length - a.length);
   for (let i = 0; i < patterns.length; i += 1) {
     const possibleMatch = matchPath({
       path: patterns[i]

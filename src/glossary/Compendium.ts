@@ -218,6 +218,8 @@ export const DATA_DEPENDENCIES : {[key: string]: DependencyFinder}= {
     (p, v) => (p.slice(0, -1).concat(["dialogueNodeLibrary"]).concat([v])),
   "$.conversationLibrary.*.dialogueNodeLibrary.*.next.*":
     (p, v) => (p.slice(0, -3).concat([v])),
+  "$.conversationLibrary.*.dialogueNodeLibrary.*.dialogueEntryId":
+    (p, v) => (["dialogueEntryLibrary" as PathComponent]).concat([v]),
 
   /// Dialogue Entries (Dialogue Copy)
   "$.dialogueEntryLibrary.*.speakerId":

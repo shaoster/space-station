@@ -12,6 +12,7 @@ const BoundMarkdownEditor = () => {
     updateData: updateTextMarkdown
   } = useDataManager<string>();
   return <MarkdownEditor
+    minHeight="128px"
     value={textMarkdown}
     onChange={updateTextMarkdown}
   />;

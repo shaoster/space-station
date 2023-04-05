@@ -1,7 +1,10 @@
 import styled from "@emotion/styled";
-import { Autocomplete, Badge, BadgeProps, Box, TextField } from "@mui/material";
-import { ImageId } from "../glossary/Images";
-import { useDataManager, useGameConfiguration } from "./Util";
+import { Autocomplete, Badge, BadgeProps, Box, Stack, TextField } from "@mui/material";
+import { ImageId, Image } from "../glossary/Images";
+import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
+import { useCallback } from "react";
+import { BoundTextField, LibraryEditor } from "./LibraryEditor";
+import { EXAMPLE_IMAGE } from "../glossary/Compendium";
 
 const IdLabel = styled(Badge)<BadgeProps>(() => ({
   '& .MuiBadge-badge': {
@@ -52,4 +55,31 @@ export const ImageSelector = (
     options={options}
     value={maybeImageId ?? null}
   />
+}
+
+const ImageCard = () => {
+  const {
+    data: maybeImage,
+  } = useDataManager<Image>();
+  return <Stack spacing={2}>
+    <DataManager>
+      <DataNode dataKey="url" key="url">
+        <BoundTextField label="Image URL"/>
+      </DataNode>
+      <DataNode dataKey="alt" key="alt">
+        <BoundTextField label="Alt Text"/>
+      </DataNode>
+      <DataNode dataKey="category" key="category">
+        <BoundTextField label="Category (optional)"/>
+      </DataNode>
+      <img src={maybeImage?.url} alt={maybeImage?.alt} /> 
+    </DataManager>
+  </Stack>;
+};
+
+export default function ImageEditor() {
+  const newImage = useCallback(() => ({...EXAMPLE_IMAGE}), []);
+  return <LibraryEditor newEntity={newImage}>
+    <ImageCard/>
+  </LibraryEditor>;
 }

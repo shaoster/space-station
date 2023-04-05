@@ -130,7 +130,6 @@ export type EntityLibrary = CharacterLibrary | ConversationLibrary | DialogueNod
     heart: {
       name: "Beating Heart",
       description: "Thump. Thump. Thump.",
-      isCountable: false,
       isQuestItem: true,
       imageId: "jane/heart",
     }
@@ -263,6 +262,20 @@ export const EXAMPLE_CONVERSATION : Conversation = {
   locationId: "bar"
 };
 
+export const EXAMPLE_IMAGE: Image = {
+  alt: "Don't push this to prod.",
+  /* TODO: Re-host placeholders. */
+  /* https://www.svgrepo.com/svg/51211/question-mark */
+  url: "https://www.svgrepo.com/show/51211/question-mark.svg",
+};
+
+export const EXAMPLE_ITEM: Item = {
+  name: "Beating Heart",
+  description: "Thump. Thump. Thump.",
+  isQuestItem: true,
+  imageId: "jane/heart",
+};
+
 
 /**
  * @hidden
@@ -300,12 +313,7 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
     }
   },
   imageLibrary: {
-    "tbd": {
-      alt: "Don't push this to prod.",
-      /* TODO: Re-host placeholders. */
-      /* https://www.svgrepo.com/svg/51211/question-mark */
-      url: "https://www.svgrepo.com/show/51211/question-mark.svg",
-    },
+    "tbd": EXAMPLE_IMAGE,
     "jane/portrait": {
       alt: "Your face.",
       /* https://www.svgrepo.com/svg/169450/smiley-face */
@@ -317,7 +325,9 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
       url: "https://www.svgrepo.com/show/513635/house.svg",
     }
   },
-  itemLibrary: {},
+  itemLibrary: {
+    heart: EXAMPLE_ITEM,
+  },
   locationLibrary: {
     home: {
       name: "Your Apartment",

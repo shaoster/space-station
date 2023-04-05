@@ -8,6 +8,8 @@ import ConversationEditor from "./ConversationEditor";
 import SummaryViewer from "./SummaryViewer";
 import { DataManager, DataNode, RouteMap, useGameConfiguration, useRelativeRouteMatch } from "./Util";
 import CharacterEditor from './CharacterEditor';
+import ImageEditor from './ImageEditor';
+import ItemEditor from './ItemEditor';
 
 function ResetError(
   {resetErrorBoundary}:
@@ -46,9 +48,10 @@ function ErrorLogger(
 
 export default function Studio() {
   const routeMap : RouteMap<GameConfiguration> = {
-    "summary": {
+    "*": {
       label: "Summary",
-      component: SummaryViewer
+      component: SummaryViewer,
+      defaultTo: "summary"
     },
     "characters/*": {
       label: "Characters",
@@ -62,6 +65,18 @@ export default function Studio() {
       propertyKey: "conversationLibrary",
       defaultTo: "conversations",
     },
+    "images/*": {
+      label: "Images",
+      component: ImageEditor,
+      propertyKey: "imageLibrary",
+      defaultTo: "images",
+    },
+    "items/*": {
+      label: "Items",
+      component: ItemEditor,
+      propertyKey: "itemLibrary",
+      defaultTo: "items",
+    }
   };
   const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap) ?? null;
   const {

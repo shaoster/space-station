@@ -34,15 +34,8 @@ export interface Item {
   imageId: ImageId;
 
   /**
-   * TBD: This and {@link isQuestItem} are probably the same thing.
-   * 
-   * Defaults to true by default.
-   */
-  isCountable?: boolean;
-
-  /**
-   * TBD: This and {@link isCountable} are probably the same thing.
-   * 
+   * Indicator for whether this is a one-off item.
+   * TBD: Potentially roll this into an "item type" field.
    * Defaults to false by default.
    */
   isQuestItem?: boolean;

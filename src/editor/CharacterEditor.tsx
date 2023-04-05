@@ -1,6 +1,6 @@
 import { Autocomplete, Box, Card, CardContent, Chip, Divider, Stack, TextField } from "@mui/material";
 import { useCallback } from "react";
-import { Character, CharacterMood, CharacterRole } from "../glossary/Characters";
+import { CharacterMood, CharacterRole } from "../glossary/Characters";
 import { EXAMPLE_CHARACTER } from "../glossary/Compendium";
 import { ImageSelector } from "./ImageEditor";
 import { BoundTextField, LibraryEditor, LibrarySelector } from "./LibraryEditor";
@@ -58,12 +58,7 @@ const CharacterCard = () => {
   const {
     gameConfiguration
   } = useGameConfiguration();
-  const {
-    data: maybeCharacter,
-    updateData: updateCharacter
-  } = useDataManager<Character>();
   // We trust the LibraryEditor to handle the undef case.
-  const character = maybeCharacter as Character;
   return (
     <Card sx={{width: "100%"}}>
       <CardContent>

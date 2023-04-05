@@ -10,6 +10,8 @@ import { DataManager, DataNode, RouteMap, useGameConfiguration, useRelativeRoute
 import CharacterEditor from './CharacterEditor';
 import ImageEditor from './ImageEditor';
 import ItemEditor from './ItemEditor';
+import RaceEditor from './RaceEditor';
+import DialogueEditor from './DialogueEditor';
 
 function ResetError(
   {resetErrorBoundary}:
@@ -59,6 +61,12 @@ export default function Studio() {
       propertyKey: "characterLibrary",
       defaultTo: "characters",
     },
+    "dialogue/*": {
+      label: "Copy/Dialogue",
+      component: DialogueEditor,
+      propertyKey: "dialogueEntryLibrary",
+      defaultTo: "dialogue"
+    },
     "conversations/*": {
       label: "Conversations",
       component: ConversationEditor,
@@ -76,6 +84,12 @@ export default function Studio() {
       component: ItemEditor,
       propertyKey: "itemLibrary",
       defaultTo: "items",
+    },
+    "races/*": {
+      label: "Races",
+      component: RaceEditor,
+      propertyKey: "raceLibrary",
+      defaultTo: "races",
     }
   };
   const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap) ?? null;

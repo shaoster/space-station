@@ -7,6 +7,7 @@ import { EXAMPLE_CONVERSATION } from "../glossary/Compendium";
 import { Conversation, DialogueEntryId, DialogueNode, DialogueNodeId, DialogueNodeLibrary } from "../glossary/Conversations";
 import { BoundCheckbox, LibraryEditor, LibrarySelector } from "./LibraryEditor";
 import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
+import MarkdownEditor from "@uiw/react-markdown-editor";
 
 type DialogueNodeVisualizer = {
   id: DialogueNodeId,
@@ -149,7 +150,7 @@ const DialogueNodeEditor = (
                     Text:
                   </TableCell>
                   <TableCell>
-                    {text}
+                    <MarkdownEditor.Markdown source={text}/>
                   </TableCell>
                 </TableRow>
               </TableBody>

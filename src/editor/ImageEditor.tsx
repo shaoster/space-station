@@ -41,7 +41,7 @@ export const ImageSelector = (
           vertical: 'top',
           horizontal: 'left'
         }}>
-          <img src={imageLibrary[selectedId].url} height={256} width={256} />
+          <img src={imageLibrary[selectedId].url} height={256} width={256} alt={imageLibrary[selectedId].alt} />
         </IdLabel>
       </Box>
     )}
@@ -61,20 +61,22 @@ const ImageCard = () => {
   const {
     data: maybeImage,
   } = useDataManager<Image>();
-  return <Stack spacing={2}>
-    <DataManager>
-      <DataNode dataKey="url" key="url">
-        <BoundTextField label="Image URL"/>
-      </DataNode>
-      <DataNode dataKey="alt" key="alt">
-        <BoundTextField label="Alt Text"/>
-      </DataNode>
-      <DataNode dataKey="category" key="category">
-        <BoundTextField label="Category (optional)"/>
-      </DataNode>
-      <img src={maybeImage?.url} alt={maybeImage?.alt} /> 
-    </DataManager>
-  </Stack>;
+  return <Box sx={{padding: 2}}>
+    <Stack spacing={2}>
+      <DataManager>
+        <DataNode dataKey="url" key="url">
+          <BoundTextField label="Image URL"/>
+        </DataNode>
+        <DataNode dataKey="alt" key="alt">
+          <BoundTextField label="Alt Text"/>
+        </DataNode>
+        <DataNode dataKey="category" key="category">
+          <BoundTextField label="Category (optional)"/>
+        </DataNode>
+        <img src={maybeImage?.url} alt={maybeImage?.alt} /> 
+      </DataManager>
+    </Stack>
+  </Box>;
 };
 
 export default function ImageEditor() {

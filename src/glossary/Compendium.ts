@@ -207,7 +207,7 @@ export const DATA_DEPENDENCIES : {[key: string]: DependencyFinder}= {
   "$.raceLibrary.*.imageId":
     (_p, v) => (["imageLibrary" as PathComponent]).concat([v]),
   "$.raceLibrary.*.itemAffinities.*":
-    (_p, v) => (["itemLibrary" as PathComponent]).concat([v]),
+    (_p, v) => (["itemLibrary" as PathComponent]).concat(_p.slice(-1)),
 
   /// Conversations (Interaction Trees)
   "$.conversationLibrary.*.characterIds.*":
@@ -276,6 +276,19 @@ export const EXAMPLE_ITEM: Item = {
   imageId: "jane/heart",
 };
 
+export const EXAMPLE_RACE: Race = {
+  raceName: "The Coalition of Human Races",
+  imageId: "jane/portrait",// You are the avatar of humanity!
+  // I guess humanity is neutral by default?
+  itemAffinities: {}
+};
+
+export const EXAMPLE_DIALOGUE_ENTRY : DialogueEntry = {
+  textMarkdown: `One morning, when Gregor Samsa woke from troubled dreams, he found himself transformed in his bed into a horrible vermin.
+He lay on his armour-like back, and if he lifted his head a little he could see his brown belly, slightly domed and divided by arches into stiff sections.
+The bedding was hardly able to cover it and seemed ready to slide off any moment.
+His many legs, pitifully thin compared with the size of the rest of him, waved about helplessly as he looked. "What's happened to me?" he thought.`, 
+};
 
 /**
  * @hidden
@@ -294,23 +307,21 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
     }
   },
   raceLibrary: {
-    human: {
-      raceName: "The Coalition of Human Races",
-      imageId: "jane/portrait",// You are the avatar of humanity!
-      // I guess humanity is neutral by default?
-      itemAffinities: {}
-    }
+    human: EXAMPLE_RACE,
   },
   conversationLibrary: {
     welcome: EXAMPLE_CONVERSATION
   },
   dialogueEntryLibrary: {
+    lorem: EXAMPLE_DIALOGUE_ENTRY,
     hello: {
-      textMarkdown: `One morning, when Gregor Samsa woke from troubled dreams, he found himself transformed in his bed into a horrible vermin. He lay on his armour-like back, and if he lifted his head a little he could see his brown belly, slightly domed and divided by arches into stiff sections. The bedding was hardly able to cover it and seemed ready to slide off any moment. His many legs, pitifully thin compared with the size of the rest of him, waved about helplessly as he looked. "What's happened to me?" he thought.`, 
+      speakerId: "baz",
+      textMarkdown: `Howdy, Pardner!`, 
     },
     goodbye: {
-      textMarkdown: `It wasn't a dream. His room, a proper human room although a little too small, lay peacefully between its four familiar walls. A collection of textile samples lay spread out on the table - Samsa was a travelling salesman - and above it there hung a picture that he had recently cut out of an illustrated magazine and housed in a nice, gilded frame. It showed a lady fitted out with a fur hat and fur boa who sat upright, raising a heavy fur muff that covered the whole of her lower arm towards the viewer.`,
-    }
+      speakerId: "baz",
+      textMarkdown: `Catch you... on the flip side...`,
+    },
   },
   imageLibrary: {
     "tbd": EXAMPLE_IMAGE,
@@ -323,10 +334,16 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
       alt: "Your flat.",
       /* https://www.svgrepo.com/svg/513635/house */
       url: "https://www.svgrepo.com/show/513635/house.svg",
+    },
+    "jane/heart": {
+      alt: "Your heart.",
+      /* https://www.svgrepo.com/svg/105119/heart */
+      url: "https://www.svgrepo.com/show/105119/heart.svg",
     }
+
   },
   itemLibrary: {
-    heart: EXAMPLE_ITEM,
+    "jane/heart": EXAMPLE_ITEM,
   },
   locationLibrary: {
     home: {

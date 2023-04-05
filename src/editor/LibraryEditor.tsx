@@ -1,112 +1,13 @@
 import AddCircleIcon from '@mui/icons-material/AddCircle';
-import { Alert, Autocomplete, Box, Button, Checkbox, FormControlLabel, List, ListItem, Tab, Tabs, TextField, TextFieldProps } from "@mui/material";
-import { PropsWithChildren, useCallback, useReducer } from "react";
+import DeleteIcon from '@mui/icons-material/Delete';
+import { Alert, Autocomplete, Box, Button, Checkbox, FormControlLabel, IconButton, List, ListItem, Popover, Tab, Tabs, TextField, TextFieldProps } from "@mui/material";
+import React, { PropsWithChildren, ReactNode, useCallback, useState } from 'react';
 import { Link, Route, Routes } from "react-router-dom";
-import { EntityId, EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
+import { EntityLibrary, GameConfiguration, IdentifiableEntity } from "../glossary/Compendium";
 import { ResourceBundle } from "../glossary/Resources";
-import { DataManager, DataNode, EntityEditor, RouteMap, useDataManager, useGameConfiguration, useRelativeRouteMatch } from "./Util";
+import { DataManager, DataNode, EntityEditor, RouteMap, useDataManager, useRelativeRouteMatch } from "./Util";
 
 export type LibraryField = keyof GameConfiguration;
-export interface LibraryHandler<T extends EntityLibrary, U extends EntityId> {
-  /**
-   * Pick which library you are taking ownership for.
-   * This is generally hierarchical, so any changes to the sub-library have to be validated by the parent before
-   * they are allowed to actually persist.
-   * This design is meant to allow referential integrity between multiple libraries enforced
-   * either through rejection of update or cascading deletes.
-   */
-  libraryFieldSelector: LibraryField;
-  
-  /**
-   * It is the specific EntityHandler's responsibility to decide how to render the editor for the given entity
-   * type.
-   *  
-   * @readonly @param configuration A read-only snapshot of the current game configuration so we can make
-   * cross-entity references if we want.
-   * @param libraryUpdater Use this to propagate updates to the library.
-   * @returns 
-   */
-  renderLibrary: (
-    configuration: GameConfiguration,
-    libraryUpdater: (library: T) => void,
-  ) => JSX.Element;
-
-  /**
-   * This gives us a way to provide an encapsulated mechanism for each editor to ensure
-   * the referential integrity of objects that it is responsible for managing.
-   * 
-   * By "encapsulated" here, I mean that only the thing that needs another object should be required
-   * to know about that dependency, instead of everybody else having to account for the dependency.
-   * 
-   * Before any candidate library is accepted into the top-level, all other registered editors must be
-   * queried to see if any data dependencies are now violated.
-   * 
-   * @param configuration The current draft configuration to validate.
-   * @param library The library containing the entities to validate, chosen based on {@link LibraryHandler.libraryFieldSelector}.
-   * @returns A potentially empty list of entity ids (of the type this editor is managing) whose dependencies
-   * are violated. An empty list means all is well.
-   */
-  validateDataDependencies(
-    configuration: GameConfiguration,
-    library: T
-  ) : U[];
-};
-
-export interface EntityHandler<T extends EntityId, U extends IdentifiableEntity, V extends EntityLibrary> {
-  /**
-   * Pick which library you are taking ownership for.
-   * This is generally hierarchical, so any changes to the sub-library have to be validated by the parent before
-   * they are allowed to actually persist.
-   * This design is meant to allow referential integrity between multiple libraries enforced
-   * either through rejection of update or cascading deletes.
-   */
-  libraryFieldSelector: LibraryField;
-  
-  /**
-   * It is the specific EntityHandler's responsibility to decide how to render the editor for the given entity
-   * type.
-   *  
-   * @readonly @param configuration A read-only snapshot of the current game configuration so we can make
-   * cross-entity references if we want.
-   * @param libraryUpdater Use this to propagate updates to the library.
-   * @optional @readonly @param entityId An identifier for the current entity we want to render.
-   *  If not provided, please render a "new" entity button.
-   * @optional @readonly @param entityValue The actual entity we want to render. Really just provided for convenience. 
-   *  If not provided, please render a "new" entity button.
-   * @returns 
-   */
-  renderEntity: (
-    configuration: GameConfiguration,
-    libraryUpdater: (library: V) => void,
-    entityId?: T,
-    entityValue?: U
-  ) => JSX.Element;
-
-  /**
-   * This gives us a way to provide an encapsulated mechanism for each editor to ensure
-   * the referential integrity of objects that it is responsible for managing.
-   * 
-   * Before any candidate library is accepted into the top-level, all other registered editors must be
-   * queried to see if any data dependencies are now violated.
-   * 
-   * This is a convenient way to do per-entity validation in the cases where that's appropriate.
-   * 
-   * @param configuration The current draft configuration to validate.
-   * @param entityId The current entity id to validate. (Maybe not useful in most cases, but hard to access otherwise.)
-   * @param entity The current entity to validate.
-   * @returns `true` if dependencies are met. `false` if something broke.
-   */
-  validateDataDependencies(
-    configuration: GameConfiguration,
-    entityId: T,
-    entity: U
-  ) : boolean;
-};
-
-type LibraryUpdateAction = {
-  libraryField: LibraryField,
-  libraryData: EntityLibrary
-};
 
 // Lots of editors wil need the ResourcePicker component, so put the logic here?
 function validateResourceBundle(
@@ -126,37 +27,6 @@ function validateResourceBundle(
   }
 
   return true;
-}
-
-enum UpdateStatus {
-  Initial,
-  Rejected,
-  Accepted
-};
-
-type GameConfigurationUpdateState = {
-  config: GameConfiguration,
-  lastUpdateStatus: UpdateStatus
-};
-
-function libraryUpdateReducer(
-  state: GameConfigurationUpdateState, 
-  action: LibraryUpdateAction
-) : GameConfigurationUpdateState {
-  if (false) {
-    // TODO: Set up the validation machinery.
-    return {
-      config: state.config,
-      lastUpdateStatus: UpdateStatus.Rejected
-    };
-  }
-  return {
-    config: {
-      ...state.config,
-      [action.libraryField]: action.libraryData
-    },
-    lastUpdateStatus: UpdateStatus.Accepted
-  }
 }
 
 export const LibrarySelector = (
@@ -185,93 +55,6 @@ export const LibrarySelector = (
       fullWidth
     />
   );
-}
-
-export class LibraryEditorBuilder {
-  /**
-   * Override that leaves the entire library traversal and rendering to the handler.
-   * The main benefit of this shared code is to partition the handling of the libraries and
-   * to validate/reject updates from the individual library handlers that violate referential
-   * integrity.
-   */
-  public static fromLibraryHandler<T extends EntityLibrary, U extends EntityId>(
-    libraryHandler : LibraryHandler<T, U>
-  ) { 
-    return () => {
-      const {
-        gameConfiguration,
-        updateGameConfiguration
-      } = useGameConfiguration();
-      const [gameConfigurationUpdateState, dispatchLibraryUpdate] = useReducer(
-        libraryUpdateReducer,
-        {
-          config: gameConfiguration,
-          lastUpdateStatus: UpdateStatus.Initial
-        }
-      );
-      const libraryUpdater = (newLibrary: T) => {
-        dispatchLibraryUpdate({
-          libraryField: libraryHandler.libraryFieldSelector,
-          libraryData : newLibrary
-        });
-        if (gameConfigurationUpdateState.lastUpdateStatus === UpdateStatus.Accepted) {
-          updateGameConfiguration(gameConfigurationUpdateState.config)
-        } else {
-          throw new Error("Could not update game configuration. Referential Integrity was probably violated.");
-        }
-      };
-      return libraryHandler.renderLibrary(
-        gameConfiguration,
-        libraryUpdater
-      );
-    }
-  }
-
-  /**
-   * Use some default MUI list and dumps an empty node at the end. 
-   */
-  public static fromEntityHandler<
-    T extends EntityId, U extends IdentifiableEntity, V extends EntityLibrary
-  > (entityHandler : EntityHandler<T, U, V>) { 
-    const genericPreservingEntries = (library: V) => Object.entries(library) as [T, U][]
-    const defaultLibraryHandler : LibraryHandler<V, T> = {
-      libraryFieldSelector: entityHandler.libraryFieldSelector,
-      renderLibrary: (config, libraryUpdater) => (
-        <List>
-          <DataManager>
-            {
-              genericPreservingEntries(
-                // This is some unfortunate workaround because I don't want to write the type-safe
-                // variants for each library.
-                (config[(entityHandler.libraryFieldSelector as keyof GameConfiguration)] as V)
-              ).map(([key, entity] : [T, U], ) => 
-                <DataNode dataKey={key} key={key}>
-                  <ListItem key={key}>
-                    {
-                      entityHandler.renderEntity(
-                        config,
-                        libraryUpdater,
-                        key, 
-                        entity
-                      )
-                    }
-                  </ListItem>
-                </DataNode>
-              )
-            } 
-          </DataManager>
-        </List>
-      ),
-      validateDataDependencies: (configuration, library) => {
-        const entries = Object.entries(library) as [T, U][];
-        return entries.filter(
-          ([entityId, entity]) =>
-          !entityHandler.validateDataDependencies(configuration, entityId as T, entity as U)
-        ).map(([k, v]) => k);
-      }
-    };
-    return this.fromLibraryHandler(defaultLibraryHandler);
-  }
 }
 
 export const BoundTextField = (
@@ -305,6 +88,68 @@ export const BoundCheckbox = (
     />
   );
 }
+
+export const LabelEditor = React.forwardRef(
+  (
+    {
+      onLabelChange,
+      onLabelDelete,
+      onDoubleClick, 
+      onEditorClose,
+      labelValue,
+      editable, to, children, ...props
+    } : 
+    {
+      onLabelChange: (v: string) => void,
+      onLabelDelete: () => void,
+      onDoubleClick: () => void,
+      onEditorClose: () => void,
+      /* The real value gets absorbed into the child. Not worth extracting it. */
+      labelValue: string,
+      editable?: boolean,
+      children: ReactNode,
+      to: string,
+    }, forwardRef: React.ForwardedRef<HTMLAnchorElement>
+  ) => {
+    const [anchorEl, setAnchorEl] = React.useState<HTMLAnchorElement | null>(null);
+    const [tempText, setTempText] = useState(labelValue);
+    return <>
+      <Link
+        ref={forwardRef}
+        to={to}
+        onDoubleClick={(event) => {
+          setAnchorEl(event.currentTarget);
+          onDoubleClick()
+        }}
+        {...props}
+      >
+        {children}
+      </Link>
+      <Popover
+        anchorEl={anchorEl}
+        open={anchorEl !== null && (editable??false)}
+        onClose={()=>{
+          setAnchorEl(null);
+          onLabelChange(tempText);
+          onEditorClose();
+        }}
+        anchorOrigin={{
+          vertical: 'center',
+          horizontal: 'right'
+        }}
+      >
+        <TextField
+          size='small'
+          defaultValue={tempText}
+          onChange={(e) => setTempText(e.target.value)}
+        />
+        <IconButton onClick={onLabelDelete}>
+          <DeleteIcon/>
+        </IconButton>
+      </Popover>
+    </>;
+  }
+);
 
 export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibrary>(
   {
@@ -343,10 +188,15 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
     }
   }, [library, updateLibrary, newEntity]);
 
-  /* TODO: Referential integrity... */
   const handleRename = useCallback((previousName: keyof U, newName: keyof U) => {
+    if (previousName === newName) {
+      return;
+    }
     if (newName in (library as U)) {
       throw new Error(`Duplicate name [${String(newName)}] not allowed.`);
+    }
+    if (!newName) {
+      throw new Error(`Every entity must have a unique identifier.`);
     }
     const {
       [previousName]: removed,
@@ -368,7 +218,7 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
       ...strippedLibrary as U,
     });
   }, [library, updateLibrary]);
-  
+  const [editingTab, setEditingTab] = useState<string | undefined>(undefined);
   return (
     <Box sx={{flexGrow: 1, display: "flex"}}>
       <Tabs
@@ -378,12 +228,39 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
         >
         {
         Object.entries(routeMap).map(
-          ([k, v] : [string, EntityEditor<U>]) => (
-          <Tab key={v.label} label={v.label} value={k} to={k} component={Link}/>
-          )
+          ([k, v] : [string, EntityEditor<U>]) => {
+            return (
+              <Tab
+                key={v.label}
+                label={v.label}
+                value={k}
+                /* For the editableField */
+                labelValue={k}
+                to={k}
+                editable={k===editingTab}
+                onLabelDelete={() => {
+                  handleRemove(k)
+                  setEditingTab(undefined)
+                }}
+                onLabelChange={(newKey : string) => {
+                  handleRename(k, newKey);
+                }}
+                onEditorClose={() => {
+                  setEditingTab(undefined)
+                }}
+                component={LabelEditor}
+                onDoubleClick={() => {setEditingTab(k)}}
+              />
+            );
+          }
         )
         }
-        <Tab key="__NEW___" component={Button} startIcon={<AddCircleIcon/>} onClick={handleCreate} />
+        <Tab
+          key="__NEW___"
+          component={Button}
+          startIcon={<AddCircleIcon/>}
+          onClick={handleCreate}
+          />
       </Tabs>
       <Routes>
         {
@@ -403,9 +280,22 @@ export function LibraryEditor<T extends IdentifiableEntity, U extends EntityLibr
           })
         }
         <Route key="*" path="*" element={
-          <Box sx={{width: "100%", padding: 4}}>
+          <Box sx={{width: "100%", paddingLeft: 4, paddingTop: 1}}>
               <Alert severity="info">
-                Select one of the items to the left.
+                Select one of the items to the left:
+                <List sx={{listStyleType: 'disc', pl: 4}}>
+                  <ListItem sx={{display: 'list-item'}}>
+                    Single Click/Tap to select.
+                  </ListItem>
+                  <ListItem sx={{display: 'list-item'}}>
+                    Double Click an item to rename/delete.
+                  </ListItem>
+                  <ListItem sx={{display: 'list-item'}}>
+                    Click <AddCircleIcon
+                            sx={{marginLeft: 1, marginRight: 1, verticalAlign: "middle"}}
+                          /> to create a new item.
+                  </ListItem>
+                </List>
               </Alert>
           </Box>
         } />

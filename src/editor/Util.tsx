@@ -331,8 +331,8 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
   const [workingConfiguration, updateWorkingConfiguration] = useState(savedConfiguration || newGameConfiguration());
   // As the quick and dirty solution for correctness, let's just recompute referential integrity on each update.
   // TODO: Incrementally update.
-  const permits = getInitialPermits(workingConfiguration);
   const referenceSafeUpdateWorkingConfiguration = (gameConfig: GameConfiguration) => {
+    const permits = getInitialPermits(gameConfig);
     for (const [dependency, dependents] of Object.entries(permits)) {
       // Every key must exist.
       const nodes = jp.nodes(gameConfig, dependency);

@@ -1,0 +1,1 @@
+Feel free to dump any draft game configurations here for backup purposes.

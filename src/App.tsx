@@ -1,9 +1,10 @@
-import './App.css';
-import React from 'react';
-import Studio from './editor/Studio';
-import { SaveProfileProvider, useGameConfiguration } from './editor/Util';
 import { Route, Routes } from 'react-router-dom';
+import './App.css';
+import { SaveProfileProvider } from './editor/ProfilePicker';
+import Studio from './editor/Studio';
+import { useGameConfiguration } from './editor/Util';
 import getClient from './game/Client';
+
 
 function PlayOrEdit() {
   const {

@@ -9,13 +9,8 @@ import { DATA_DEPENDENCIES, GameConfiguration, newGameConfiguration } from "../g
 
 import jp, { PathComponent } from 'jsonpath';
 import { useErrorBoundary } from "react-error-boundary";
+import { STATIC_PROFILES } from "./ProfilePicker";
 
-/**
- * idk about this dependency, but I'd rather not waste time maintaining things
- * like object/array equality.
- */
-
-const SCRATCH_PROFILE = "__DEFAULT__";
 
 /**
  * Child interface that encapsulates dependencies between objects.
@@ -272,9 +267,16 @@ const typedMemo: <T>(c: T) => T = React.memo;
 export const DataManager = typedMemo(DataManagerInternal);
 
 /**
- * This is a provider target for DataManager.
+ * This is a provider target for DataManager and works like a decorator
+ * component.
+ * 
  * All direct children of DataManager need to be duck-typed to include
- * the dataKey field. 
+ * the dataKey field and this is just an empty container that takes
+ * a type-safe (but unused) dataKey prop.
+ * 
+ * Note: The only reason we're not using "key" is that key is theoretically
+ * a react internal concept. The downside of this respect for impl details is
+ * that in most cases, both key and dataKey are set to the same value.
  * 
  */
 export const DataNode = React.memo((
@@ -322,11 +324,11 @@ export class ReferentialIntegrityError extends Error {
   }
 }
 
-export const GameConfigurationProvider = ({profileName, children} : {profileName: string | undefined, children: ReactNode}) => {
+export const GameConfigurationProvider = ({profileName, children} : {profileName: string, children: ReactNode}) => {
   console.log("Loading profile from:", profileName)
   const [savedConfiguration, saveCurrentConfiguration] = useLocalStorage<GameConfiguration | undefined>(
-    profileName ?? SCRATCH_PROFILE,
-    undefined
+    profileName,
+    STATIC_PROFILES[profileName] 
   );
   const [workingConfiguration, updateWorkingConfiguration] = useState(savedConfiguration || newGameConfiguration());
   // As the quick and dirty solution for correctness, let's just recompute referential integrity on each update.
@@ -357,27 +359,6 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
   }}>
     {children}
   </GameConfigurationContext.Provider>;
-};
-
-export const ProfileNameProvider = ({children} : {children: ReactNode}) => {
-  const { profileName } = useParams();
-  return <GameConfigurationProvider profileName={profileName}>
-    {children}
-  </GameConfigurationProvider>;
-};
-
-export const SaveProfileProvider = ({children} : {children: ReactNode}) => {
-  // We have to rewrite the component graph a bit because the useParams hook below has to live within the router here.
-  // I guess people don't run into this often because we're building a decorator component here that has to flip the
-  // chain inside out to propagate down the children.
-  const rebasedChildren = <ProfileNameProvider>
-    {children}
-  </ProfileNameProvider>;
-  return <HashRouter basename="/">
-    <Routes>
-      <Route path=":profileName/*" element={rebasedChildren}/>
-    </Routes>
-  </HashRouter>;
 };
 
 /**

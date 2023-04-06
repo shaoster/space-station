@@ -11,25 +11,25 @@ import { ConversationId } from "./Conversations";
 /**
  * This is where we decide how many phases a given day has.
  */
-export enum DayPhase {
+export enum DayStage {
   /**
    * Morning is the first phase each day, I guess.
    */
-  Morning = 0,
-  Afternoon,
-  Evening,
+  Morning = "Morning",
+  Afternoon = "Afternoon",
+  Evening = "Evening",
   /**
    * LateNight might be the last phase each day?
    */
-  LateNight
+  LateNight = "LateNight"
 }
 
 /**
  * A standardized way of referring to a specific point in time.
  * TBD: Clarify how to work with this thing as a text string.
- * For now, we can just talk about it like "3.Morning" or "3.0"
+ * For now, we can just talk about it like "3.Morning"
  **/
-export type TimeCoordinate = `${number}.${DayPhase}`;
+export type TimeCoordinate = `${number}.${DayStage}`;
 
 /**
  * An EventSchedule corresponds to all of the events that are currently 

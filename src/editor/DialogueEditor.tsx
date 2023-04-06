@@ -1,10 +1,10 @@
 import { Box, Stack } from "@mui/material";
+import MarkdownEditor from "@uiw/react-markdown-editor";
 import { useCallback } from "react";
 import { EXAMPLE_RACE } from "../glossary/Compendium";
 import { ImageSelector } from "./ImageEditor";
-import { BoundTextField, LibraryEditor, LibrarySelector } from "./LibraryEditor";
+import { LibraryEditor, LibrarySelector } from "./LibraryEditor";
 import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
-import MarkdownEditor from "@uiw/react-markdown-editor";
 
 const BoundMarkdownEditor = () => {
   const {

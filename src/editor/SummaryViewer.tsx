@@ -1,11 +1,13 @@
-import { Button, Card, CardContent } from "@mui/material";
+import { Button, Card, CardContent, Link } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useGameConfiguration } from "./Util";
+import { useHref } from "react-router-dom";
 
 const PR_PREFIX = "https://github.com/shaoster/space-station/new/main/src/configurations";
 export default function SummaryViewer() {
   const {
     gameConfiguration,
+    currentProfile
   } = useGameConfiguration();
   const [lastUpdated, touch] = useState(new Date().getTime());
   useEffect(() => {
@@ -23,6 +25,15 @@ export default function SummaryViewer() {
           Post PR to Github
         </Button>
       </a>
+      &nbsp;
+      <Link href={useHref(`/${currentProfile}/play`)}
+        target="_blank"
+        rel="noreferrer"
+      >
+        <Button variant="contained">
+          Play Configuration
+        </Button>
+      </Link>
       <pre>
         {
         JSON.stringify(gameConfiguration, null, 2)

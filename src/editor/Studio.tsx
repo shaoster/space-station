@@ -2,7 +2,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { Alert, Box, IconButton, Modal, Tab, Tabs } from "@mui/material";
 import { useEffect, useState } from "react";
 import { ErrorBoundary, } from "react-error-boundary";
-import { Link, Route, Routes } from "react-router-dom";
+import { Link, Route, Routes, useHref } from "react-router-dom";
 import { GameConfiguration } from "../glossary/Compendium";
 import ConversationEditor from "./ConversationEditor";
 import SummaryViewer from "./SummaryViewer";
@@ -12,6 +12,7 @@ import ImageEditor from './ImageEditor';
 import ItemEditor from './ItemEditor';
 import RaceEditor from './RaceEditor';
 import DialogueEditor from './DialogueEditor';
+import HomeIcon from '@mui/icons-material/Home';
 
 function ResetError(
   {resetErrorBoundary}:
@@ -92,7 +93,7 @@ export default function Studio() {
       defaultTo: "races",
     }
   };
-  const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap) ?? null;
+  const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap) ?? Object.keys(routeMap)[0];
   const {
     gameConfiguration,
     updateGameConfiguration
@@ -103,6 +104,11 @@ export default function Studio() {
     <ErrorLogger error={error}/>
     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
       <Tabs value={currentTab}>
+        <a href={useHref("/")}>
+          <IconButton sx={{left: 8, top: 4}}>
+            <HomeIcon/>
+          </IconButton>
+        </a>
         {
           Object.entries(routeMap).map(([route, {label, defaultTo}]) => (
             <Tab key={label} label={label} value={route} to={defaultTo ?? route} component={Link}/>

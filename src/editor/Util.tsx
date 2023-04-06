@@ -10,6 +10,7 @@ import { DATA_DEPENDENCIES, GameConfiguration, newGameConfiguration } from "../g
 import jp, { PathComponent } from 'jsonpath';
 import { useErrorBoundary } from "react-error-boundary";
 import { STATIC_PROFILES } from "./ProfilePicker";
+import { profile } from "console";
 
 
 /**
@@ -307,9 +308,10 @@ export function useDataManager<T>() : DataManagerType<T | undefined> {
 // the more generic DataManager.
 // TODO: Reconcile.
 export type GameConfigurationManager = {
+  currentProfile: string,
   gameConfiguration: GameConfiguration,
   updateGameConfiguration: (configuration: GameConfiguration) => void
-}
+};
 
 const GameConfigurationContext = React.createContext<GameConfigurationManager | undefined>(undefined);
 
@@ -354,6 +356,7 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
     saveCurrentConfiguration(workingConfiguration);  
   }, [workingConfiguration, saveCurrentConfiguration]);
   return <GameConfigurationContext.Provider value={{
+    currentProfile: profileName,
     gameConfiguration: workingConfiguration,
     updateGameConfiguration: referenceSafeUpdateWorkingConfiguration
   }}>

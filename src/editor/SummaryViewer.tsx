@@ -2,7 +2,7 @@ import { Button, Card, CardContent } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useGameConfiguration } from "./Util";
 
-const PR_PREFIX = "https://github.com/shaoster/space-station/new/main/src/game-configurations";
+const PR_PREFIX = "https://github.com/shaoster/space-station/new/main/src/configurations";
 export default function SummaryViewer() {
   const {
     gameConfiguration,

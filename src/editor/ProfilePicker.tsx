@@ -6,11 +6,11 @@ import { HashRouter, Link, Route, Routes, useParams } from "react-router-dom";
 import { GameConfigurationProvider } from "./Util";
 import { GameConfiguration } from "../glossary/Compendium";
 
-const context = require.context("../game-configurations", true, /.json$/);
+const context = require.context("../configurations", true, /.json$/);
 export const STATIC_PROFILES: {[key: string]: GameConfiguration} = {};
 context.keys().forEach((key: any) => {
   const fileName = key.replace('./', '');
-  const resource = require(`../game-configurations/${fileName}`);
+  const resource = require(`../configurations/${fileName}`);
   const namespace: string = fileName.replace('.json', '');
   STATIC_PROFILES[namespace] = JSON.parse(JSON.stringify(resource)) as GameConfiguration;
 });

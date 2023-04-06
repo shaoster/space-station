@@ -15,7 +15,7 @@ export default function SummaryViewer() {
   const urlEncodedGameConfig = encodeURIComponent(JSON.stringify(gameConfiguration, null, 2));
   return <Card>
     <CardContent>
-      <a href={PR_PREFIX + "?filename=" + fileName + "&value=" + urlEncodedGameConfig}
+      <a href={PR_PREFIX + "?filename=configurations/" + fileName + "&value=" + urlEncodedGameConfig}
         target="_blank"
         rel="noreferrer"
       >

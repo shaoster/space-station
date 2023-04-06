@@ -1,7 +1,7 @@
 {
   "files": {
     "main.css": "/space-station/static/css/main.ebebc058.css",
-    "main.js": "/space-station/static/js/main.8df0a928.js",
+    "main.js": "/space-station/static/js/main.6d8ba4b1.js",
     "static/js/1983.d6685c39.chunk.js": "/space-station/static/js/1983.d6685c39.chunk.js",
     "static/js/2355.8b5ce2ea.chunk.js": "/space-station/static/js/2355.8b5ce2ea.chunk.js",
     "static/js/8625.c7bf6beb.chunk.js": "/space-station/static/js/8625.c7bf6beb.chunk.js",
@@ -112,7 +112,7 @@
     "static/js/1483.f1418fa2.chunk.js": "/space-station/static/js/1483.f1418fa2.chunk.js",
     "index.html": "/space-station/index.html",
     "main.ebebc058.css.map": "/space-station/static/css/main.ebebc058.css.map",
-    "main.8df0a928.js.map": "/space-station/static/js/main.8df0a928.js.map",
+    "main.6d8ba4b1.js.map": "/space-station/static/js/main.6d8ba4b1.js.map",
     "1983.d6685c39.chunk.js.map": "/space-station/static/js/1983.d6685c39.chunk.js.map",
     "2355.8b5ce2ea.chunk.js.map": "/space-station/static/js/2355.8b5ce2ea.chunk.js.map",
     "8625.c7bf6beb.chunk.js.map": "/space-station/static/js/8625.c7bf6beb.chunk.js.map",
@@ -224,6 +224,6 @@
   },
   "entrypoints": [
     "static/css/main.ebebc058.css",
-    "static/js/main.8df0a928.js"
+    "static/js/main.6d8ba4b1.js"
   ]
 }

@@ -3,14 +3,13 @@
  * @packageDocumentation
  */
 import React, { ReactElement, ReactNode, useContext, useEffect, useState } from "react";
-import { HashRouter, Route, Routes, matchPath, useLocation, useParams, useResolvedPath } from "react-router-dom";
+import { matchPath, useLocation, useResolvedPath } from "react-router-dom";
 import useLocalStorage from "use-local-storage";
 import { DATA_DEPENDENCIES, GameConfiguration, newGameConfiguration } from "../glossary/Compendium";
 
 import jp, { PathComponent } from 'jsonpath';
 import { useErrorBoundary } from "react-error-boundary";
 import { STATIC_PROFILES } from "./ProfilePicker";
-import { profile } from "console";
 
 
 /**

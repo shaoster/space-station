@@ -2,9 +2,11 @@
  * The core game logic. Pretend this is just a complicated board game.
  */
 
-import { ActivePlayers, Game, StageConfig } from "boardgame.io";
+import { ActivePlayers, Game, StageConfig, State } from "boardgame.io";
 import { GameConfiguration } from "../glossary/Compendium";
-import { DayStage, TimeCoordinate } from "../glossary/Events";
+import { DayStage, EventSchedule, TimeCoordinate } from "../glossary/Events";
+import { ResourceBundle } from "../glossary/Resources";
+import { ConversationId, DialogueNodeId } from "../glossary/Conversations";
 
 const STAGES = Object.fromEntries(
   Object.values(DayStage).map((p, i) => [
@@ -15,6 +17,14 @@ const STAGES = Object.fromEntries(
     } as StageConfig
   ])
 );
+
+export type SpaceGameState = State & {
+  readonly config: GameConfiguration,
+  resources: ResourceBundle,
+  schedule: EventSchedule,
+  currentConversation?: ConversationId,
+  currentDialogueNode?: DialogueNodeId,
+};
 
 export const SpaceGame = (gameConfiguration : GameConfiguration) : Game => ({
   setup: () => ({
@@ -27,8 +37,9 @@ export const SpaceGame = (gameConfiguration : GameConfiguration) : Game => ({
     schedule: {
       ...gameConfiguration.initialEventSchedule
     },
-    currentConversation: undefined
-  }),
+    currentConversation: undefined,
+    currentDialogueNode: undefined,
+  } as SpaceGameState),
   moves: {
     // TODO: Map turns to the traversal of the conversation graph.
     // Need a bit of a state machine...
@@ -36,10 +47,18 @@ export const SpaceGame = (gameConfiguration : GameConfiguration) : Game => ({
       if (typeof G.currentDialogueNode === "undefined" &&
           typeof G.currentConversation === "undefined") {
         const stage = (ctx.activePlayers as ActivePlayers)[playerID] as DayStage;
+        if (stage === Object.values(DayStage).at(-1)) {
+          events.endTurn();
+        }
         const tc : TimeCoordinate = `${ctx.turn}.${stage}`;
         G.currentConversation = G.schedule[tc];
+        if (typeof G.currentConversation === "undefined") {
+          events.endStage();
+          return;
+        }
         const conversation = G.config.conversationLibrary[G.currentConversation]; 
         G.currentDialogueNode = conversation.initialDialogueNode;
+        return;
       }
       if (typeof G.currentDialogueNode === "undefined" &&
           typeof G.currentConversation !== "undefined") {

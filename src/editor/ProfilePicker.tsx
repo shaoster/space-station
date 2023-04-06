@@ -74,8 +74,8 @@ const ProfileReverter = (
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose} variant="contained">Never Mind</Button>
-        <Button onClick={handleConfirm} variant="contained" autoFocus>
+        <Button onClick={handleClose} variant="contained" autoFocus>Never Mind</Button>
+        <Button onClick={handleConfirm} variant="contained">
           I'm sure
         </Button>
       </DialogActions>

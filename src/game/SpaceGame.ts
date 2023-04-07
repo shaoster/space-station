@@ -2,21 +2,11 @@
  * The core game logic. Pretend this is just a complicated board game.
  */
 
-import { ActivePlayers, Game, StageConfig, State } from "boardgame.io";
+import { Game, State } from "boardgame.io";
 import { GameConfiguration } from "../glossary/Compendium";
-import { DayStage, EventSchedule, TimeCoordinate } from "../glossary/Events";
+import { Conversation, ConversationId, DialogueNodeId } from "../glossary/Conversations";
+import { EventSchedule, TimeCoordinate, getTimeCoordinateFromTurn } from "../glossary/Events";
 import { ResourceBundle } from "../glossary/Resources";
-import { ConversationId, DialogueNodeId } from "../glossary/Conversations";
-
-const STAGES = Object.fromEntries(
-  Object.values(DayStage).map((p, i) => [
-    p,
-    {
-      next: i >= Object.values(DayStage).length ? undefined :
-        Object.values(DayStage)[i+1]
-    } as StageConfig
-  ])
-);
 
 export type SpaceGameState = State & {
   readonly config: GameConfiguration,
@@ -26,7 +16,7 @@ export type SpaceGameState = State & {
   currentDialogueNode?: DialogueNodeId,
 };
 
-export const SpaceGame = (gameConfiguration : GameConfiguration) : Game => ({
+export const SpaceGame = (gameConfiguration : GameConfiguration) : Game<SpaceGameState> => ({
   setup: () => ({
     // This should be read-only.
     config: gameConfiguration,
@@ -43,42 +33,38 @@ export const SpaceGame = (gameConfiguration : GameConfiguration) : Game => ({
   moves: {
     // TODO: Map turns to the traversal of the conversation graph.
     // Need a bit of a state machine...
+    // The various states are:
+    // - We're in a timeslot with no events scheduled.
+    // - We are in the middle of an event.
+    // - We have reached the ending of an event.
     selectOption: ({ G, ctx, events, playerID}, choice: string | null): void => {
+      // There's nothing currently scheduled.
       if (typeof G.currentDialogueNode === "undefined" &&
           typeof G.currentConversation === "undefined") {
-        const stage = (ctx.activePlayers as ActivePlayers)[playerID] as DayStage;
-        if (stage === Object.values(DayStage).at(-1)) {
-          events.endTurn();
-        }
-        const tc : TimeCoordinate = `${ctx.turn}.${stage}`;
-        G.currentConversation = G.schedule[tc];
-        if (typeof G.currentConversation === "undefined") {
-          events.endStage();
-          return;
-        }
-        const conversation = G.config.conversationLibrary[G.currentConversation]; 
-        G.currentDialogueNode = conversation.initialDialogueNode;
+        events.endTurn();
         return;
       }
+      // We've reached a dead end in the conversation.
       if (typeof G.currentDialogueNode === "undefined" &&
           typeof G.currentConversation !== "undefined") {
-        // We've reached a dead end in the conversation.
         G.currentConversation = undefined;
-        events.endStage();
+        events.endTurn();
         return;
       }
+      // We're in an event.
+      const conversation = G.config.conversationLibrary[G.currentConversation as string] as Conversation;
+      const dialogueNode = conversation.dialogueNodeLibrary[G.currentDialogueNode as DialogueNodeId];
+      const choices = dialogueNode.next;
+      G.currentDialogueNode = choice ? choices[choice] : undefined;
     },
   },
-
   turn: {
     onBegin: ({G, ctx, events}) => {
-      const stage = (ctx.activePlayers as ActivePlayers)[ctx.currentPlayer] as DayStage;
-      const tc : TimeCoordinate = `${ctx.turn}.${stage}`;
+      const tc : TimeCoordinate = getTimeCoordinateFromTurn(ctx.turn);
       G.currentConversation = G.schedule[tc];
+      if (typeof G.currentConversation !== "undefined") {
+        G.currentDialogueNode = G.config.conversationLibrary[G.currentConversation].initialDialogueNodeId;
+      }
     },
-    activePlayers: {
-      currentPlayer: Object.values(DayStage)[0],
-    },
-    stages: STAGES
   },
 });

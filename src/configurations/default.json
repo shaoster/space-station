@@ -39,6 +39,10 @@
           "next": {
             "_": "1",
             "Choice 0": "2"
+          },
+          "position": {
+            "x": 13,
+            "y": 14.399999999999977
           }
         },
         "1": {
@@ -51,13 +55,13 @@
           }
         },
         "2": {
-          "locationId": "bar",
-          "dialogueEntryId": "hello",
+          "locationId": "home",
+          "dialogueEntryId": "lorem",
           "next": {},
           "isGameOver": false,
           "position": {
             "x": 667,
-            "y": 93
+            "y": 96
           }
         }
       },
@@ -115,6 +119,12 @@
       "imageId": "jane/home"
     }
   },
-  "initialEventSchedule": {},
-  "initialResources": {}
+  "initialEventSchedule": {
+    "1.Morning": "welcome"
+  },
+  "initialResources": {
+    "items": {
+      "jane/heart": 1
+    }
+  }
 }

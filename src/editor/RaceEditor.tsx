@@ -41,6 +41,7 @@ const AffinitySlider = () => {
     step={0.1}
     value={affinity}
     marks={marks}
+    valueLabelDisplay="auto"
     onChange={(_evt, val) => setAffinity((val as number) === 0 ? undefined : val as number)}
   />;
 }

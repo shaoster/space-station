@@ -38,6 +38,9 @@ export enum FungibleResource {
   Energy,
 }
 
+export const FUNGIBLE_KEYS : string[] = Object.keys(FungibleResource).slice(0, Object.keys(FungibleResource).length / 2);
+export const FUNGIBLE_VALUES : FungibleResource[] = Object.values(FungibleResource).slice(Object.values(FungibleResource).length / 2) as FungibleResource[];
+
 /**
  * A really general way of specifying a bundle of resources.
  * These can be used as requirements, costs, or rewards.

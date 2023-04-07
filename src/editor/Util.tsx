@@ -156,10 +156,11 @@ function getInitialPermits(gameConfiguration: GameConfiguration) {
 }
 
 const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
-  {data, updateData, children}: 
+  {data, updateData, defaultValue, children}: 
   {
     data?: T,
     updateData?: (data: T) => void,
+    defaultValue?: T,
     children: ReactNode
   }
 ) => {
@@ -169,7 +170,7 @@ const DataManagerInternal = <T extends {[key: string | number | symbol] : any}>(
     data: contextData,
     updateData: contextUpdater,
   } = useDataManager<T>();
-  const actualData = (data ?? contextData) as T | undefined;
+  const actualData = (data ?? contextData ?? defaultValue) as T | undefined;
   const actualPath = contextPath ?? [];
   if (typeof actualData === "undefined") {
     throw new Error("DataManager must have data at its root, at the very least. Found at: "

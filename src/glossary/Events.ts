@@ -39,3 +39,34 @@ export type TimeCoordinate = `${number}.${DayStage}`;
  * by an identifier into the {@link Conversations.ConversationLibrary}.
  */
 export type EventSchedule = { [key: TimeCoordinate] : ConversationId }
+
+/**
+ * Define the canonical mapping from turn to time coordinate.
+ */
+export const getDayAndStageFromTurn = (turn: number) : [number, DayStage] => {
+  const stageCount = Object.keys(DayStage).length;
+  const [day, stageIndex] = [(Math.floor((turn-1) / stageCount) + 1), (turn - 1) % stageCount];
+  const stage = Object.values(DayStage)[stageIndex];
+  return [day, stage];
+}
+
+export const getTimeCoordinateFromTurn = (turn: number) : TimeCoordinate => {
+  const [day, stage] = getDayAndStageFromTurn(turn);
+  return `${day}.${stage}`;
+}
+
+export const getTimeCoordinateFromDayAndStage = (day: number, stage: DayStage) : TimeCoordinate => {
+  return `${day}.${stage}`;
+}
+
+export const getTurnFromTimeCoordinate = (tc: TimeCoordinate) : number => {
+  const pattern = /^([0-9]+)\.(.+)$/;
+  const match = pattern.exec(tc);
+  if (match === null) {
+    throw new Error("Invalid time coordinate.");
+  }
+  const day : number = parseInt(match[0]);
+  const stage = Object.keys(DayStage).indexOf(match[1]);
+  // Test cases, 1.Morning , 5.LateNight.
+  return (day - 1) * Object.keys(DayStage).length + stage + 1;
+}

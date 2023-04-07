@@ -31,7 +31,7 @@ function validateResourceBundle(
 
 export const LibrarySelector = (
   { fieldLabel, fieldLibrary, fieldValue, multiple } :
-  { fieldLabel: string,
+  { fieldLabel?: string,
     fieldLibrary: EntityLibrary,
     fieldValue?: any,
     multiple?:boolean,

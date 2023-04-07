@@ -359,7 +359,8 @@ const EMPTY_GAME_CONFIGURATION : GameConfiguration = {
       imageId: "jane/home"
     }
   },
-  initialEventSchedule: {},
+  initialEventSchedule: {
+  },
   initialResources: {},
 };
 

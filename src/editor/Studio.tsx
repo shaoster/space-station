@@ -1,5 +1,5 @@
 import CloseIcon from '@mui/icons-material/Close';
-import { Alert, Box, IconButton, Modal, Tab, Tabs } from "@mui/material";
+import { Alert, Box, Grid, IconButton, Modal, Tab, Tabs } from "@mui/material";
 import { useEffect, useState } from "react";
 import { ErrorBoundary, } from "react-error-boundary";
 import { Link, Route, Routes, useHref } from "react-router-dom";
@@ -13,6 +13,8 @@ import ItemEditor from './ItemEditor';
 import RaceEditor from './RaceEditor';
 import DialogueEditor from './DialogueEditor';
 import HomeIcon from '@mui/icons-material/Home';
+import ScheduleEditor from './ScheduleEditor';
+import ResourceEditor from './ResourceEditor';
 
 function ResetError(
   {resetErrorBoundary}:
@@ -91,7 +93,19 @@ export default function Studio() {
       component: RaceEditor,
       propertyKey: "raceLibrary",
       defaultTo: "races",
-    }
+    },
+    "resources": {
+      label: "Resources",
+      component: ResourceEditor,
+      propertyKey: "initialResources",
+      defaultTo: "resources"
+    },
+    "schedule": {
+      label: "Schedule",
+      component: ScheduleEditor,
+      propertyKey: "initialEventSchedule",
+      defaultTo: "schedule"
+    },
   };
   const currentTab = useRelativeRouteMatch<GameConfiguration>(routeMap) ?? Object.keys(routeMap)[0];
   const {
@@ -99,22 +113,25 @@ export default function Studio() {
     updateGameConfiguration
   } = useGameConfiguration();
   const [error, logError] = useState<Error | undefined>(undefined);
- 
   return <ErrorBoundary FallbackComponent={ResetError} onError={logError}>
     <ErrorLogger error={error}/>
     <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-      <Tabs value={currentTab}>
-        <a href={useHref("/")}>
-          <IconButton sx={{left: 8, top: 4}}>
+      <Grid container>
+        <Grid item xs={0.2}>
+          <IconButton sx={{left: 8, top: 4}} href={useHref("/")}>
             <HomeIcon/>
           </IconButton>
-        </a>
-        {
-          Object.entries(routeMap).map(([route, {label, defaultTo}]) => (
-            <Tab key={label} label={label} value={route} to={defaultTo ?? route} component={Link}/>
-          ))
-        }
-      </Tabs>
+        </Grid>
+        <Grid item xs={11.8}>
+          <Tabs value={currentTab}>
+            {
+              Object.entries(routeMap).map(([route, {label, defaultTo}]) => (
+                <Tab key={label} label={label} value={route} to={defaultTo ?? route} component={Link}/>
+              ))
+            }
+          </Tabs>
+        </Grid>
+      </Grid>
     </Box>
     <Routes>
       {

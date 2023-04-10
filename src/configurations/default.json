@@ -32,17 +32,17 @@
         "jane",
         "baz"
       ],
-      "initialDialogueNodeId": "0",
+      "initialDialogueNodeId": "3",
       "dialogueNodeLibrary": {
         "0": {
           "dialogueEntryId": "hello",
           "next": {
-            "_": "1",
-            "Choice 0": "2"
+            "Stab Baz": "1",
+            "Go to Bed": "2"
           },
           "position": {
-            "x": 13,
-            "y": 14.399999999999977
+            "x": 37,
+            "y": 150.39999999999998
           }
         },
         "1": {
@@ -50,18 +50,30 @@
           "isGameOver": true,
           "next": {},
           "position": {
-            "x": 19,
-            "y": 242
+            "x": 34,
+            "y": 266
           }
         },
         "2": {
-          "locationId": "home",
+          "locationId": null,
           "dialogueEntryId": "lorem",
           "next": {},
+          "isGameOver": true,
+          "position": {
+            "x": 310,
+            "y": 261
+          }
+        },
+        "3": {
+          "locationId": "bar",
+          "dialogueEntryId": "bar/entrance",
+          "next": {
+            "Turn Around": "0"
+          },
           "isGameOver": false,
           "position": {
-            "x": 667,
-            "y": 96
+            "x": 22.922141687166004,
+            "y": 24.64558490329921
           }
         }
       },
@@ -74,11 +86,18 @@
     },
     "hello": {
       "speakerId": "baz",
-      "textMarkdown": "Howdy, Pardner!"
+      "textMarkdown": "Howdy, Pardner!\n\n_Baz seems like his usual bouncy and well-rested self. He takes a quick glance at your hunched posture and doesn't bother hiding his concern_\n\nSeems like you've gotten a head start on me...\n\nWhat do you have for me this morning?",
+      "imageId": "tbd"
     },
     "goodbye": {
       "speakerId": "baz",
       "textMarkdown": "Catch you... on the flip side..."
+    },
+    "bar/entrance": {
+      "raceName": "The Coalition of Human Races",
+      "imageId": "tbd",
+      "itemAffinities": {},
+      "textMarkdown": "The artificial sunrise intrudes through the window of *bar*.\nYou wish you could say you're here early, but alas another long night, no sleep.\nYou hear a familiar pattern of footsteps behind you and feel a tap on your shoulder."
     }
   },
   "imageLibrary": {
@@ -120,7 +139,9 @@
     }
   },
   "initialEventSchedule": {
-    "1.Morning": ["welcome"]
+    "1.Morning": [
+      "welcome"
+    ]
   },
   "initialResources": {
     "items": {

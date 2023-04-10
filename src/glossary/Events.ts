@@ -38,7 +38,7 @@ export type TimeCoordinate = `${number}.${DayStage}`;
  * For now, the "events" are just {@link Conversations.Conversation} objects referenced
  * by an identifier into the {@link Conversations.ConversationLibrary}.
  */
-export type EventSchedule = { [key: TimeCoordinate] : ConversationId }
+export type EventSchedule = { [key: TimeCoordinate] : [ConversationId] }
 
 /**
  * Define the canonical mapping from turn to time coordinate.

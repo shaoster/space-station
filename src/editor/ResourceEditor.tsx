@@ -1,9 +1,6 @@
 import { Box, Chip, Divider, Slider, Stack } from "@mui/material";
-import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
 import { FUNGIBLE_VALUES, FungibleResource } from "../glossary/Resources";
-import { CharacterId } from "../glossary/Characters";
-import ItemEditor from "./ItemEditor";
-import { BoundCheckbox } from "./LibraryEditor";
+import { DataManager, DataNode, useDataManager, useGameConfiguration } from "./Util";
 
 const NumberSlider = ({...props}) => {
   const {

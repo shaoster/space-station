@@ -24,6 +24,7 @@ function DayScheduler({day} : {day: number}) {
             <DataNode dataKey={getTimeCoordinateFromDayAndStage(day, ds)}>
               <LibrarySelector
                 fieldLibrary={conversationLibrary}
+                multiple
               />
             </DataNode>
           </DataManager>

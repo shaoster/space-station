@@ -1,4 +1,4 @@
-import { Badge, Box, Button, Grid, List, ListItem, Paper, Stack } from "@mui/material";
+import { Badge, Box, Button, Grid, IconButton, List, ListItem, Paper, Stack } from "@mui/material";
 import MarkdownEditor from "@uiw/react-markdown-editor";
 import { Ctx } from "boardgame.io";
 import { BoardProps } from "boardgame.io/dist/types/packages/react";
@@ -7,7 +7,9 @@ import { Conversation, ConversationId, DialogueNodeId } from "../glossary/Conver
 import { getDayAndStageFromTurn } from "../glossary/Events";
 import { ItemId } from "../glossary/Items";
 import { FungibleResource } from "../glossary/Resources";
-import { SpaceGameState } from "./SpaceGame";
+import { GetStage, SpaceGameState, TurnStage } from "./SpaceGame";
+import { useHref } from "react-router-dom";
+import HomeIcon from '@mui/icons-material/Home';
 
 export const Fungibles = (
   {fungibles} : {fungibles: { [key in FungibleResource]? : number}}
@@ -72,8 +74,35 @@ export const DayResourcePanel = (
     resources
   } = G;
   return <Grid container>
-    <Grid item xs={12}>
+    <Grid item xs={0.5}>
+      <IconButton sx={{left: 8, top: 4}} href={useHref("/")}>
+        <HomeIcon/>
+      </IconButton>
+    </Grid>
+    <Grid item xs={0.5}>
       Turn: {ctx.turn}
+    </Grid>
+    <Grid item xs={1}>
+      "TurnStage": {GetStage(ctx)}
+    </Grid>
+    <Grid item xs={9}>
+      <p>
+        TurnStage is a non-diegetic concept utilizing boardgame.io's stages, independent of time segments.
+      </p>
+      <p>
+        The set of Moves allowable in the debug panel on the right is also dependent on which "stage we're in."
+      </p>
+      <ul>
+        <li>
+          "Continue" means there's no choices for the player to make.
+        </li>
+        <li>
+          "SelectConversation" means we're at the beginning of a timeslot choosing who to talk to.
+        </li>
+        <li>
+          "SelectDialogue" means we're in the middle of a conversation.
+        </li>
+      </ul>
     </Grid>
     <Grid item xs={1}>
       Day: {day}
@@ -82,11 +111,12 @@ export const DayResourcePanel = (
       Time: {stage}
     </Grid>
     <Grid item xs={10}>
+      Fungibles
       <Fungibles fungibles={resources.fungibles ?? {}}/>
     </Grid>
     <Grid item xs={2}>
       <Paper sx={{margin: 1, padding: 2}}>
-        The mapping of a day-stage time coordinate to a turn is as follows:
+        The mapping of a day-timeslot time coordinate to a turn is as follows:
         <ul>
           <li>Turn 1 corresponds to Day 1, Morning.</li>
           <li>As the turn goes up by one, the stage will advance within the same day.</li>
@@ -165,34 +195,56 @@ export const DialoguePanel = (
 }
 
 export const Choices = (
-  {G, ctx, selectOption} :
-  {G: SpaceGameState, ctx: Ctx, selectOption: (choice: string | null) => void}
+  {G, ctx, moves} :
+  {G: SpaceGameState, ctx: Ctx, moves: Record<string, (...args: any[]) => void>}
 ) => {
-  const continueButton = <Stack sx={{maxWidth: 480}}>
-    <Button onClick={() => selectOption(null)} variant="contained">
-      Continue
-    </Button>
-  </Stack>;
-  if (typeof G.currentConversation === "undefined" ||
-      typeof G.currentDialogueNode === "undefined"
-  ) {
-    return continueButton;
-  } else {
-    const conversation : Conversation = G.config.conversationLibrary[G.currentConversation];
-    const dialogueNode = conversation.dialogueNodeLibrary[G.currentDialogueNode];
-    const choices = Object.keys(dialogueNode.next);
-    if (choices.length === 0) {
-      return continueButton;
+  const turnStage : TurnStage = GetStage(ctx);
+  switch (turnStage) {
+    case TurnStage.Continue:
+      return <Stack sx={{maxWidth: 480}}>
+        <Button
+          variant="contained"
+          onClick={() => moves.continue()}>
+          Continue
+        </Button>
+      </Stack>;
+    case TurnStage.SelectConversation:
+      const choices: ConversationId[] = G.conversationSelect as ConversationId[];
+      return <Stack sx={{maxWidth: 480}} spacing={1}>
+        {
+          choices.map((choice) => (
+            <Button
+              key={choice}
+              variant="contained"
+              onClick={() => moves.selectConversation(choice)}
+            >
+              {choice}
+              <br/>
+              (TBD: There should be a more thematic way to choose conversations than their "id".)
+            </Button>
+          ))
+        }
+      </Stack>;
+    case TurnStage.SelectDialogueNode: {
+      const conversation : Conversation = G.config.conversationLibrary[G.currentConversation as ConversationId];
+      const dialogueNode = conversation.dialogueNodeLibrary[G.currentDialogueNode as DialogueNodeId];
+      const choices = Object.keys(dialogueNode.next);
+      return <Stack sx={{maxWidth: 480}} spacing={1}>
+        {
+          choices.map((choice) => (
+            <Button
+              key={choice}
+              variant="contained"
+              onClick={() => moves.selectDialogue(choice)}
+            >
+              {choice !== "_" ? choice : "<In the real game, this choice would be forced and others would be greyed out.>"}
+            </Button>
+          ))
+        }
+      </Stack>;
     }
-    return <Stack sx={{maxWidth: 480}} spacing={1}>
-      {
-        choices.map((choice) => (
-          <Button key={choice} variant="contained" onClick={() => selectOption(choice)}>
-            {choice !== "_" ? choice : "<In the real game, this choice would be forced and others would be greyed out.>"}
-          </Button>
-        ))
-      }
-    </Stack>;
+    default:
+      throw new Error(`Unrecognized turn stage [${turnStage}].`);
   }
 }
 
@@ -202,6 +254,6 @@ export const Board = ({ctx, G, moves} : BoardProps & {
   return <Box sx={{padding: 2}}>
     <DayResourcePanel ctx={ctx} G={G}/>
     <DialoguePanel conversationId={G.currentConversation} dialogueNodeId={G.currentDialogueNode}/>
-    <Choices G={G} ctx={ctx} selectOption={moves.selectOption}/>
+    <Choices G={G} ctx={ctx} moves={moves}/>
   </Box>
 };

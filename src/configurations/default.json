@@ -120,7 +120,7 @@
     }
   },
   "initialEventSchedule": {
-    "1.Morning": "welcome"
+    "1.Morning": ["welcome"]
   },
   "initialResources": {
     "items": {

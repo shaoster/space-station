@@ -8,6 +8,12 @@ import { GameConfiguration } from "../glossary/Compendium";
 import { PermitsType, getInitialPermits, useGameConfiguration } from "./Util";
 import { SelectionType } from "./ConversationEditor";
 
+/**
+ * 
+ * @param npMap
+ * @param path 
+ * @returns itself if in npMap, otherwise nearest parent. If none, returns [].
+ */
 function findNearestParent(npMap: Set<string>, path: PathComponent[]): PathComponent[] {
   if (npMap.has(JSON.stringify(path))) {
     return path;
@@ -40,7 +46,7 @@ function getEdgesFromGameConfig(gameConfig: GameConfiguration) {
 const ROOT_LABEL_HEIGHT = 20;
 const MARGIN = 8;
 const ROW_HEIGHT = 40;
-const COL_WIDTH = 200;
+const COL_WIDTH = 320;
 const Y_THRESHOLD = 800;
 
 function autoLayoutNodes(nodes: Node[]): Node[] {
@@ -129,9 +135,8 @@ function getNodesFromGameConfig(
       id: JSON.stringify(pcs),
     };
     const maybeParent = findNearestParent(gpMap, pcs);
-    if (maybeParent.length === 0) {
-      return undefined;
-    } else if (JSON.stringify(maybeParent) === nodeBase.id) {
+    if (maybeParent.length === pcs.length) {
+      // Root level.
       return {
         ...nodeBase,
         data: {
@@ -142,10 +147,18 @@ function getNodesFromGameConfig(
         },
       };
     } else {
+      // Non-root level.
+      console.log(pcs, maybeParent);
+      let relativeLabel = jp.stringify(pcs.slice(maybeParent.length));
+      if (relativeLabel.startsWith("$.")) {
+        relativeLabel = relativeLabel.slice(2);
+      } else {
+        relativeLabel = relativeLabel.slice(1);
+      }
       return {
         ...nodeBase,
         data: {
-          label: jp.stringify(pcs.slice(maybeParent.length)).slice(2)
+          label: relativeLabel,
         },
         parentNode: JSON.stringify(maybeParent),
         position: {
@@ -161,6 +174,7 @@ function getGroupPathsFromGameConfig(gameConfig: GameConfiguration) : string[] {
   const libraryKeys = [
     "characterLibrary",
     "conversationLibrary",
+    "conversationLibrary.*.dialogueNodeLibrary",
     "dialogueEntryLibrary",
     "imageLibrary",
     "itemLibrary",
@@ -256,7 +270,7 @@ function DependencyVisualizer() {
           height: n.style?.height,
           width: n.style?.width,
           overflow: n.style?.overflow,
-          backgroundColor: upstream.has(n.id) ? "#ff0000" : downstream.has(n.id) ? "#00ff00" : "inherit",
+          backgroundColor: upstream.has(n.id) ? "#ff0000" : downstream.has(n.id) ? "#00ff00" : n.id === selection.data ? "white" :  "inherit",
         };
         return n;
       }));

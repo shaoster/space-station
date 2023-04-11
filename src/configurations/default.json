@@ -5,7 +5,7 @@
       "title": "The Proctor",
       "role": 0,
       "imageIds": {
-        "0": "jane/portrait"
+        "Neutral": "jane/portrait"
       },
       "raceId": "human"
     },
@@ -14,7 +14,7 @@
       "title": "Boozelfop",
       "role": 4,
       "imageIds": {
-        "0": "jane/portrait"
+        "Neutral": "jane/portrait"
       },
       "raceId": "human"
     }

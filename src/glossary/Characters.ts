@@ -8,9 +8,9 @@ import { ImageId } from "./Images";
 import { RaceId } from "./Races";
 
 export enum CharacterMood {
-  Neutral = 0,
-  Happy,
-  Upset,
+  Neutral = "Neutral",
+  Happy = "Happy",
+  Upset = "Upset",
 };
 
 /**

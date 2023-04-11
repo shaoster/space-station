@@ -100,6 +100,7 @@ function autoLayoutNodes(nodes: Node[]): Node[] {
         },
         style: {
           height: ROW_HEIGHT,
+          width: COL_WIDTH - (2* MARGIN),
           overflow: "scroll",
         }
       })

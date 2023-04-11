@@ -17,9 +17,10 @@ import ScheduleEditor from './ScheduleEditor';
 import ResourceEditor from './ResourceEditor';
 
 function ResetError(
-  {resetErrorBoundary}:
-  {resetErrorBoundary: () => void}
+  {error, resetErrorBoundary}:
+  {error: Error, resetErrorBoundary: () => void}
 ) {
+  console.error(error);
   resetErrorBoundary();
   return <></>;
 }

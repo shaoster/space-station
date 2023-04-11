@@ -82,8 +82,8 @@ const getLeaser = (permits: PermitsType, setPermits: (permits: PermitsType) => v
   return {
     addDependent: function(dependent, dependency): void {
       // First deal with the inbound side.
-      const dependentPath = jp.stringify(dependent);
-      const dependencyPath = jp.stringify(dependency);
+      const dependentPath = JSON.stringify(dependent);
+      const dependencyPath = JSON.stringify(dependency);
       if (dependencyPath in permits) {
         setPermits({
           ...permits,
@@ -102,8 +102,8 @@ const getLeaser = (permits: PermitsType, setPermits: (permits: PermitsType) => v
       }
     },
     removeDependent: function(dependent, dependency): void {
-      const dependentPath = jp.stringify(dependent);
-      const dependencyPath = jp.stringify(dependency);
+      const dependentPath = JSON.stringify(dependent);
+      const dependencyPath = JSON.stringify(dependency);
       if (!(dependencyPath in permits)) {
         throw new Error(`There is no dependency on ${dependencyPath} to remove.`);
       }
@@ -138,7 +138,7 @@ const getLeaser = (permits: PermitsType, setPermits: (permits: PermitsType) => v
   } as DataLeaser;
 };
 
-function getInitialPermits(gameConfiguration: GameConfiguration) {
+export function getInitialPermits(gameConfiguration: GameConfiguration) {
   const permits : PermitsType = {};
   const updatePermits = (newPermits: PermitsType) => {
     Object.assign(permits, newPermits);
@@ -310,7 +310,7 @@ export function useDataManager<T>() : DataManagerType<T | undefined> {
 export type GameConfigurationManager = {
   currentProfile: string,
   gameConfiguration: GameConfiguration,
-  updateGameConfiguration: (configuration: GameConfiguration) => void
+  updateGameConfiguration: (configuration: GameConfiguration) => void,
 };
 
 const GameConfigurationContext = React.createContext<GameConfigurationManager | undefined>(undefined);
@@ -339,9 +339,13 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
     const permits = getInitialPermits(gameConfig);
     for (const [dependency, dependents] of Object.entries(permits)) {
       // Every key must exist.
-      const nodes = jp.nodes(gameConfig, dependency);
+      const jpDependency = jp.stringify(JSON.parse(dependency));
+      const nodes = jp.nodes(gameConfig, jpDependency);
       if (nodes.length === 0) {
-        throw new ReferentialIntegrityError(dependency, Object.keys(dependents));
+        throw new ReferentialIntegrityError(
+          jpDependency,
+          Object.keys(dependents).map(d => jp.stringify(JSON.parse(d)))
+        );
       }
     }
     updateWorkingConfiguration(gameConfig);
@@ -358,7 +362,7 @@ export const GameConfigurationProvider = ({profileName, children} : {profileName
   return <GameConfigurationContext.Provider value={{
     currentProfile: profileName,
     gameConfiguration: workingConfiguration,
-    updateGameConfiguration: referenceSafeUpdateWorkingConfiguration
+    updateGameConfiguration: referenceSafeUpdateWorkingConfiguration,
   }}>
     {children}
   </GameConfigurationContext.Provider>;

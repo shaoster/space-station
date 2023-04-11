@@ -57,3 +57,8 @@
   margin-left: 84px;
   text-align: left;
 }
+
+/* Hack from https://stackoverflow.com/a/73437007 */
+.react-flow__node {
+   z-index: -1 !important;
+}

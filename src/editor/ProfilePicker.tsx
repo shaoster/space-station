@@ -16,7 +16,6 @@ context.keys().forEach((key: any) => {
   const namespace: string = fileName.replace('.json', '');
   STATIC_PROFILES[namespace] = JSON.parse(JSON.stringify(resource)) as GameConfiguration;
 });
-console.log(STATIC_PROFILES);
 
 export const ProfileNameProvider = ({children} : {children: ReactNode}) => {
   const { profileName } = useParams();

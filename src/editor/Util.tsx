@@ -153,7 +153,6 @@ export function getInitialPermits(gameConfiguration: GameConfiguration) {
         }
     }
   }
-  console.log("Permits:", permits);
   return permits;
 }
 

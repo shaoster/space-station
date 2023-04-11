@@ -119,7 +119,6 @@ function getNodesFromGameConfig(
 ) {
   const gpMap = new Set(groupPaths);
   const sources = new Set(Object.values(dependencies).map(Object.keys).flat());
-  console.log("sources", sources);
   const targets = new Set(Object.keys(dependencies));
   const allPaths = jp.paths(gameConfig, "$..*").filter(pcs => {
     const p = JSON.stringify(pcs);
@@ -187,7 +186,6 @@ function DependencyVisualizer() {
   } = useGameConfiguration();
   const [selection, setSelection] = useState<Selection| undefined>(undefined);
   const groupPaths = getGroupPathsFromGameConfig(gameConfiguration);
-  console.log("gps", groupPaths);
   const deps = getInitialPermits(gameConfiguration);
   const initialNodes = autoLayoutNodes(
     getNodesFromGameConfig(
@@ -265,8 +263,6 @@ function DependencyVisualizer() {
     }
 
   }, [selection, setNodes]);
-  console.log("nodes", nodes);
-  console.log("edges", edges);
   return <Box sx={{width: 1440, height: Y_THRESHOLD, marginTop: 2}}>
     <ReactFlow
       nodes={nodes}

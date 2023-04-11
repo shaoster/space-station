@@ -147,8 +147,10 @@ export function getInitialPermits(gameConfiguration: GameConfiguration) {
   for (const [pathExp, dl] of Object.entries(DATA_DEPENDENCIES)) {
     const entries = jp.nodes(gameConfiguration, pathExp);
     for (const {path, value} of entries) {
-        const dep = dl(path, value);
-        leaser.addDependent(path, dep);
+        const deps = dl(path, value);
+        for (const dep of deps) {
+          leaser.addDependent(path, dep);
+        }
     }
   }
   console.log("Permits:", permits);

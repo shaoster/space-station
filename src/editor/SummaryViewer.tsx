@@ -167,8 +167,8 @@ function getGroupPathsFromGameConfig(gameConfig: GameConfiguration) : string[] {
     "itemLibrary",
     "locationLibrary",
     "raceLibrary",
-    //"initialEventSchedule",
-    //"initialResources"
+    "initialEventSchedule",
+    "initialResources"
   ];
   return libraryKeys.map(lk => jp.paths(gameConfig, `$.${lk}.*`).map(
     (v) => JSON.stringify(v)

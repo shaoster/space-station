@@ -135,7 +135,7 @@ function getNodesFromGameConfig(
       return {
         ...nodeBase,
         data: {
-          label: jp.stringify(pcs),
+          label: jp.stringify(pcs).slice(2),
         },
         position: {
           x: 0, y: 0,
@@ -145,7 +145,7 @@ function getNodesFromGameConfig(
       return {
         ...nodeBase,
         data: {
-          label: jp.stringify(pcs.slice(maybeParent.length))
+          label: jp.stringify(pcs.slice(maybeParent.length)).slice(2)
         },
         parentNode: JSON.stringify(maybeParent),
         position: {

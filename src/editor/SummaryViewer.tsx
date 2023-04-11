@@ -2,10 +2,11 @@ import { Box, Button, Card, CardContent, Link } from "@mui/material";
 import jp, { PathComponent } from 'jsonpath';
 import { useEffect, useState } from "react";
 import { useHref } from "react-router-dom";
-import ReactFlow, { Node, ReactFlowProvider, useEdgesState, useNodesState } from "reactflow";
+import ReactFlow, { Node, ReactFlowProvider, useEdgesState, useNodesState, useOnSelectionChange } from "reactflow";
 import 'reactflow/dist/style.css';
 import { GameConfiguration } from "../glossary/Compendium";
 import { PermitsType, getInitialPermits, useGameConfiguration } from "./Util";
+import { SelectionType } from "./ConversationEditor";
 
 function findNearestParent(npMap: Set<string>, path: PathComponent[]): PathComponent[] {
   if (npMap.has(JSON.stringify(path))) {
@@ -174,10 +175,17 @@ function getGroupPathsFromGameConfig(gameConfig: GameConfiguration) : string[] {
   )).flat();
 }
 
+type Selection = {
+  type: SelectionType,
+  data: string | [string, string]
+};
+
+
 function DependencyVisualizer() {
   const {
     gameConfiguration
   } = useGameConfiguration();
+  const [selection, setSelection] = useState<Selection| undefined>(undefined);
   const groupPaths = getGroupPathsFromGameConfig(gameConfiguration);
   console.log("gps", groupPaths);
   const deps = getInitialPermits(gameConfiguration);
@@ -191,24 +199,88 @@ function DependencyVisualizer() {
   const initialEdges = getEdgesFromGameConfig(gameConfiguration);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  useOnSelectionChange({
+    onChange: ({nodes, edges}) => {
+      // TBD: Don't copy-paste this from ConversationEditor.
+      // 3 cases: node selected, edge selected, or nothing selected.
+      const maybeSelectedNodeId = nodes.find(n => n.selected)?.id;
+      const maybeSelectedEdge = edges.find(n => n.selected);
+      if (typeof maybeSelectedNodeId !== "undefined") {
+        setSelection({
+          type: SelectionType.Node,
+          data: maybeSelectedNodeId
+        });
+      } else if (typeof maybeSelectedEdge !== "undefined") {
+        const sourceTarget: [string, string] = [maybeSelectedEdge.source, maybeSelectedEdge.target];
+        setSelection({
+          type: SelectionType.Edge,
+          data: sourceTarget
+        });
+      } else {
+        setSelection(undefined);
+      }
+    }
+  });
+  useEffect(() => {
+    if (typeof selection === "undefined") {
+      // Reset styles.
+      setNodes(nodes.map(n=> {
+        n.style = {
+          height: n.style?.height,
+          width: n.style?.width,
+          overflow: n.style?.overflow
+        };
+        return n;
+      }))
+    } else if (selection.type === SelectionType.Edge) {
+      const [source, target] = selection.data;
+      setNodes(nodes.map(n=>{
+        n.style = {
+          height: n.style?.height,
+          width: n.style?.width,
+          overflow: n.style?.overflow,
+          backgroundColor: n.id === source ? "#ff0000" : n.id === target ? "#00ff00" : "inherit",
+        };
+        return n;
+      }))
+    } else if (selection.type === SelectionType.Node) {
+      let downstream = new Set();
+      for (const [target, sources] of Object.entries(deps)) {
+        for (const source in sources) {
+          if (source === selection.data) {
+            downstream.add(target);
+          }
+        }
+      }
+      let upstream = (selection.data as string) in deps ? new Set(Object.keys(deps[selection.data as string])) : new Set();
+      setNodes(nodes.map(n=>{
+        n.style = {
+          height: n.style?.height,
+          width: n.style?.width,
+          overflow: n.style?.overflow,
+          backgroundColor: upstream.has(n.id) ? "#ff0000" : downstream.has(n.id) ? "#00ff00" : "inherit",
+        };
+        return n;
+      }));
+    }
+
+  }, [selection, setNodes]);
   console.log("nodes", nodes);
   console.log("edges", edges);
   return <Box sx={{width: 1440, height: Y_THRESHOLD, marginTop: 2}}>
-    <ReactFlowProvider>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onConnect={()=>{}}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        style={{ background: "#d0d0d0"}}
-        nodesConnectable={false}
-        defaultViewport={{
-          x: 0, y: 0, zoom: 1.0
-        }} 
-        attributionPosition="top-right"
-      />
-    </ReactFlowProvider>
+    <ReactFlow
+      nodes={nodes}
+      edges={edges}
+      onConnect={()=>{}}
+      onNodesChange={onNodesChange}
+      onEdgesChange={onEdgesChange}
+      style={{ background: "#d0d0d0"}}
+      nodesConnectable={false}
+      defaultViewport={{
+        x: 0, y: 0, zoom: 1.0
+      }} 
+      attributionPosition="top-right"
+    />
   </Box>;
 }
 
@@ -243,7 +315,9 @@ export default function SummaryViewer() {
           Play Configuration
         </Button>
       </Link>
-      <DependencyVisualizer/>
+      <ReactFlowProvider>
+        <DependencyVisualizer/>
+      </ReactFlowProvider>
       <pre>
         {
         JSON.stringify(gameConfiguration, null, 2)

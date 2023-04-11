@@ -271,7 +271,7 @@ const DialogueEdgeEditor = (
   );
 };
 
-enum SelectionType {
+export enum SelectionType {
   Edge,
   Node
 };

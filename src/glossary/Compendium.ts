@@ -203,6 +203,10 @@ export const DATA_DEPENDENCIES : {[key: string]: DependencyFinder}= {
   "$.characterLibrary.*.raceId":
     (_p, v) => (["$", "raceLibrary" as PathComponent]).concat([v]),
 
+  /// Locations
+  "$.locationLibrary.*.imageId":
+    (_p, v) => (["$", "imageLibrary" as PathComponent]).concat([v]),
+
   /// Races
   "$.raceLibrary.*.imageId":
     (_p, v) => (["$", "imageLibrary" as PathComponent]).concat([v]),
